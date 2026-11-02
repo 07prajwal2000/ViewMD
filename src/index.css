@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import "github-markdown-css/github-markdown.css";
+@import "highlight.js/styles/github.css";
+
+@layer base {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --border-color: #d0d7de;
+    --text-primary: #1f2328;
+    --text-secondary: #656d76;
+    --accent: #0969da;
+  }
+
+  .dark {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --border-color: #30363d;
+    --text-primary: #e6edf3;
+    --text-secondary: #848d97;
+    --accent: #2f81f7;
+  }
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+
+/* Custom scrollbars for clean editor feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.25);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 120, 120, 0.45);
+}
+
+/* Override GitHub markdown background to inherit cleanly */
+.markdown-body {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.dark .markdown-body {
+  color-scheme: dark;
+}
+
+.dark .hljs {
+  background: #161b22 !important;
+  color: #e6edf3 !important;
+}
