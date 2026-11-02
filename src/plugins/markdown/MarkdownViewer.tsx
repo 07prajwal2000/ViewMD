@@ -87,7 +87,7 @@ export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, on
   const renderPreview = () => (
     <div className="h-full w-full overflow-y-auto bg-white dark:bg-[#0d1117] p-8 transition-colors">
       <div className="max-w-4xl mx-auto">
-        <article className="markdown-body">
+        <article className="markdown-body" data-theme={resolvedTheme}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeHighlight, rehypeRaw]}
