@@ -115,7 +115,7 @@ export const FileTree: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50/50 dark:bg-[#161b22] border-r border-gray-200 dark:border-gray-800 select-none">
+    <div className="h-full flex flex-col bg-gray-50/50 dark:bg-[#161b22] select-none">
       {/* Explorer Header */}
       <div className="h-9 px-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-800/80 shrink-0">
         <span className="text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase truncate">
