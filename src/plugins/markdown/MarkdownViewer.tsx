@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { EditorView } from '@codemirror/view';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -9,10 +10,12 @@ import rehypeRaw from 'rehype-raw';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 import type { ViewerProps } from '../../types/plugin';
 import { useTheme } from '../../context/ThemeContext';
+import { useEditorSettings } from '../../context/EditorSettingsContext';
 import { getStoredViewMode, type MarkdownViewMode } from '../../services/storage/settings';
 
 export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, onSave }) => {
   const { resolvedTheme } = useTheme();
+  const { isWrapText } = useEditorSettings();
   const [viewMode, setViewMode] = useState<MarkdownViewMode>(getStoredViewMode());
 
   // Listen for view mode changes triggered by toolbar
@@ -51,7 +54,7 @@ export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, on
           height="100%"
           className="h-full text-sm"
           theme={resolvedTheme === 'dark' ? oneDark : 'light'}
-          extensions={[markdown()]}
+          extensions={isWrapText ? [markdown(), EditorView.lineWrapping] : [markdown()]}
           onChange={(val) => onContentChange(val)}
           basicSetup={{
             lineNumbers: true,

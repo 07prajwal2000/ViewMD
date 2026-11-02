@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { EditorView } from '@codemirror/view';
 import type { ViewerProps } from '../../types/plugin';
 import { useTheme } from '../../context/ThemeContext';
+import { useEditorSettings } from '../../context/EditorSettingsContext';
 
 export const PlainTextViewer: React.FC<ViewerProps> = ({ tab, onContentChange, onSave }) => {
   const { resolvedTheme } = useTheme();
+  const { isWrapText } = useEditorSettings();
 
   // Listen for Ctrl+S / Cmd+S
   useEffect(() => {
@@ -30,6 +33,7 @@ export const PlainTextViewer: React.FC<ViewerProps> = ({ tab, onContentChange, o
           height="100%"
           className="h-full text-sm font-mono"
           theme={resolvedTheme === 'dark' ? oneDark : 'light'}
+          extensions={isWrapText ? [EditorView.lineWrapping] : []}
           onChange={(val) => onContentChange(val)}
           basicSetup={{
             lineNumbers: true,

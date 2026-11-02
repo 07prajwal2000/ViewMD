@@ -2,6 +2,7 @@ import React from 'react';
 import { PanelLeft, BookOpen } from 'lucide-react';
 import { RecentsDropdown } from '../common/RecentsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { WrapToggle } from '../common/WrapToggle';
 import { useTabs } from '../../context/TabsContext';
 import { pluginRegistry } from '../../plugins';
 import type { ViewerHeaderActionProps } from '../../types/plugin';
@@ -57,8 +58,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
         )}
       </div>
 
-      {/* Right section: Theme Switcher & Links */}
+      {/* Right section: Theme Switcher, Wrap Text & Links */}
       <div className="flex items-center gap-1.5">
+        <WrapToggle />
         <ThemeToggle />
 
         <a

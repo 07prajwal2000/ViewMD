@@ -375,12 +375,33 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const setSourceTabs = fromPane === 'primary' ? setPrimaryTabs : setSecondaryTabs;
       const setTargetTabs = toPane === 'primary' ? setPrimaryTabs : setSecondaryTabs;
       const setTargetActive = toPane === 'primary' ? setActivePrimaryTabId : setActiveSecondaryTabId;
+      const setSourceActive = fromPane === 'primary' ? setActivePrimaryTabId : setActiveSecondaryTabId;
 
       const tab = sourceTabs.find((t) => t.id === tabId);
       if (!tab) return;
 
+      if (toPane === 'secondary') {
+        setIsSplitView(true);
+      }
+
       // Remove from source
-      setSourceTabs((prev) => prev.filter((t) => t.id !== tabId));
+      setSourceTabs((prev) => {
+        const next = prev.filter((t) => t.id !== tabId);
+        const activeId = fromPane === 'primary' ? activePrimaryTabId : activeSecondaryTabId;
+        if (activeId === tabId) {
+          if (next.length === 0) {
+            setSourceActive(null);
+          } else {
+            setSourceActive(next[0].id);
+          }
+        }
+        // If moving out of secondary and it is now empty, close split view
+        if (fromPane === 'secondary' && next.length === 0) {
+          setIsSplitView(false);
+          setActiveSecondaryTabId(null);
+        }
+        return next;
+      });
 
       // Add to target if not exists
       setTargetTabs((prev) => {
@@ -391,7 +412,7 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTargetActive(tabId);
       setFocusedPane(toPane);
     },
-    [primaryTabs, secondaryTabs]
+    [primaryTabs, secondaryTabs, activePrimaryTabId, activeSecondaryTabId]
   );
 
   const toggleSplitView = useCallback(() => {

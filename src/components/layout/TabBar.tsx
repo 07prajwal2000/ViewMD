@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, File, FileCode, Pin, Columns2, ArrowRightLeft } from 'lucide-react';
+import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useTabs, type PaneType } from '../../context/TabsContext';
 import type { TabItem } from '../../types/plugin';
 
@@ -144,23 +144,57 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
 
                 <span className="truncate max-w-[120px]">{tab.name}</span>
 
-                {/* Pin button on hover for non-pinned tabs */}
-                {!tab.isPinned && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      togglePinTab(tab.id, pane);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 transition-opacity"
-                    title="Pin Tab"
-                  >
-                    <Pin className="w-2.5 h-2.5" />
-                  </button>
-                )}
+                {/* Quick actions on hover */}
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5">
+                  {/* Move tab to other pane button */}
+                  {pane === 'primary' ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isSplitView) {
+                          moveTabToPane(tab.id, 'primary', 'secondary');
+                        } else {
+                          openToSide(tab.id, 'primary');
+                        }
+                      }}
+                      className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 cursor-pointer"
+                      title="Move tab to Split Window (Right)"
+                    >
+                      <ArrowRight className="w-2.5 h-2.5" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        moveTabToPane(tab.id, 'secondary', 'primary');
+                      }}
+                      className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 cursor-pointer"
+                      title="Move tab to Normal Window (Left)"
+                    >
+                      <ArrowLeft className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+
+                  {/* Pin button on hover for non-pinned tabs */}
+                  {!tab.isPinned && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePinTab(tab.id, pane);
+                      }}
+                      className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 cursor-pointer"
+                      title="Pin Tab"
+                    >
+                      <Pin className="w-2.5 h-2.5" />
+                    </button>
+                  )}
+                </div>
 
                 {/* Dirty indicator or Close button */}
-                <div className="flex items-center">
+                <div className="flex items-center ml-0.5">
                   {tab.isDirty ? (
                     <div
                       onClick={(e) => {
@@ -198,27 +232,53 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
       {/* Pane action toolbar */}
       <div className="px-2 flex items-center gap-1">
         {pane === 'primary' ? (
-          <button
-            type="button"
-            onClick={toggleSplitView}
-            className={`p-1.5 rounded transition-colors cursor-pointer ${
-              isSplitView
-                ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
-                : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/60 dark:hover:bg-gray-800'
-            }`}
-            title={isSplitView ? 'Close Split View (merge tabs)' : 'Split Editor Right (View 2 files side-by-side)'}
-          >
-            <Columns2 className="w-3.5 h-3.5" />
-          </button>
+          <>
+            {isSplitView && currentActiveId && (
+              <button
+                type="button"
+                onClick={() => moveTabToPane(currentActiveId, 'primary', 'secondary')}
+                className="p-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                title="Move active tab to Split Window (Right)"
+              >
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleSplitView}
+              className={`p-1.5 rounded transition-colors cursor-pointer ${
+                isSplitView
+                  ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/60 dark:hover:bg-gray-800'
+              }`}
+              title={isSplitView ? 'Close Split View (merge all tabs)' : 'Split Editor Right (View 2 files side-by-side)'}
+            >
+              <Columns2 className="w-3.5 h-3.5" />
+            </button>
+          </>
         ) : (
-          <button
-            type="button"
-            onClick={toggleSplitView}
-            className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
-            title="Close Split View (merge tabs)"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <>
+            {currentActiveId && (
+              <button
+                type="button"
+                onClick={() => moveTabToPane(currentActiveId, 'secondary', 'primary')}
+                className="p-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                title="Move active tab to Normal Window (Left)"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleSplitView}
+              className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+              title="Close Split View (merge tabs to Normal Window)"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </>
         )}
       </div>
 
@@ -234,7 +294,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
         >
           <div
             style={{ top: `${contextMenuTab.y}px`, left: `${contextMenuTab.x}px` }}
-            className="fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-51 text-xs min-w-[170px]"
+            className="fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-51 text-xs min-w-[190px]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -249,34 +309,35 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
               <span>{contextMenuTab.tab.isPinned ? 'Unpin Tab' : 'Pin Tab'}</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (!isSplitView) {
-                  openToSide(contextMenuTab.tab.id, pane);
-                } else {
-                  moveTabToPane(
-                    contextMenuTab.tab.id,
-                    pane,
-                    pane === 'primary' ? 'secondary' : 'primary'
-                  );
-                }
-                setContextMenuTab(null);
-              }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
-            >
-              {isSplitView ? (
-                <>
-                  <ArrowRightLeft className="w-3 h-3" />
-                  <span>Move to Other Pane</span>
-                </>
-              ) : (
-                <>
-                  <Columns2 className="w-3 h-3" />
-                  <span>Open to the Side (Split)</span>
-                </>
-              )}
-            </button>
+            {pane === 'primary' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isSplitView) {
+                    openToSide(contextMenuTab.tab.id, 'primary');
+                  } else {
+                    moveTabToPane(contextMenuTab.tab.id, 'primary', 'secondary');
+                  }
+                  setContextMenuTab(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
+              >
+                <ArrowRight className="w-3 h-3" />
+                <span>Move to Split Window (Right)</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  moveTabToPane(contextMenuTab.tab.id, 'secondary', 'primary');
+                  setContextMenuTab(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>Move to Normal Window (Left)</span>
+              </button>
+            )}
 
             <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
 

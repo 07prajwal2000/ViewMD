@@ -5,6 +5,7 @@ export type MarkdownViewMode = 'edit' | 'split' | 'preview';
 const THEME_KEY = 'viewmd_theme';
 const VIEW_MODE_KEY = 'viewmd_view_mode';
 const SIDEBAR_KEY = 'viewmd_sidebar_open';
+const WRAP_TEXT_KEY = 'viewmd_wrap_text';
 
 export function getStoredTheme(): ThemeMode {
   const val = localStorage.getItem(THEME_KEY);
@@ -37,4 +38,13 @@ export function getStoredSidebarOpen(): boolean {
 
 export function setStoredSidebarOpen(isOpen: boolean): void {
   localStorage.setItem(SIDEBAR_KEY, String(isOpen));
+}
+
+export function getStoredWrapText(): boolean {
+  const val = localStorage.getItem(WRAP_TEXT_KEY);
+  return val === 'true'; // default to false
+}
+
+export function setStoredWrapText(wrap: boolean): void {
+  localStorage.setItem(WRAP_TEXT_KEY, String(wrap));
 }

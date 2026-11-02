@@ -19,9 +19,24 @@ export const App: React.FC = () => {
     updateTabContent,
     saveActiveFile,
     closeTab,
+    moveTabToPane,
     setFocusedPane,
   } = useTabs();
   const { currentDirectory, openFolder } = useWorkspace();
+
+  const handlePaneDrop = (e: React.DragEvent, targetPane: PaneType) => {
+    e.preventDefault();
+    try {
+      const dataStr = e.dataTransfer.getData('application/viewmd-tab');
+      if (!dataStr) return;
+      const data = JSON.parse(dataStr) as { id: string; pane: PaneType };
+      if (data.pane !== targetPane) {
+        moveTabToPane(data.id, data.pane, targetPane);
+      }
+    } catch (err) {
+      console.error('Error dropping tab on pane:', err);
+    }
+  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => {
@@ -125,7 +140,16 @@ export const App: React.FC = () => {
         <Group orientation="horizontal" className="h-full w-full">
           {/* Primary View Pane */}
           <Panel defaultSize="50%" minSize="20%" className="h-full flex flex-col overflow-hidden">
-            <div className="h-full w-full flex flex-col overflow-hidden" onClick={() => setFocusedPane('primary')}>
+            <div
+              className="h-full w-full flex flex-col overflow-hidden"
+              onClick={() => setFocusedPane('primary')}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes('application/viewmd-tab')) {
+                  e.preventDefault();
+                }
+              }}
+              onDrop={(e) => handlePaneDrop(e, 'primary')}
+            >
               <TabBar pane="primary" />
               <div className="flex-1 overflow-hidden relative">
                 {renderViewer(activePrimaryTab, 'primary')}
@@ -138,7 +162,16 @@ export const App: React.FC = () => {
 
           {/* Secondary View Pane (Split View) */}
           <Panel defaultSize="50%" minSize="20%" className="h-full flex flex-col overflow-hidden border-l border-gray-200/50 dark:border-gray-800/50">
-            <div className="h-full w-full flex flex-col overflow-hidden" onClick={() => setFocusedPane('secondary')}>
+            <div
+              className="h-full w-full flex flex-col overflow-hidden"
+              onClick={() => setFocusedPane('secondary')}
+              onDragOver={(e) => {
+                if (e.dataTransfer.types.includes('application/viewmd-tab')) {
+                  e.preventDefault();
+                }
+              }}
+              onDrop={(e) => handlePaneDrop(e, 'secondary')}
+            >
               <TabBar pane="secondary" />
               <div className="flex-1 overflow-hidden relative">
                 {renderViewer(activeSecondaryTab, 'secondary')}
