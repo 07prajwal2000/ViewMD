@@ -5,6 +5,7 @@ import App from './App.tsx';
 import { ThemeProvider } from './context/ThemeContext';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { TabsProvider } from './context/TabsContext';
+import { SearchProvider } from './context/SearchContext';
 import { EditorSettingsProvider } from './context/EditorSettingsContext';
 import { initializePlugins } from './plugins';
 
@@ -17,7 +18,9 @@ createRoot(document.getElementById('root')!).render(
       <EditorSettingsProvider>
         <WorkspaceProvider>
           <TabsProvider>
-            <App />
+            <SearchProvider>
+              <App />
+            </SearchProvider>
           </TabsProvider>
         </WorkspaceProvider>
       </EditorSettingsProvider>

@@ -6,9 +6,11 @@ import {
   RefreshCw,
   Folder,
   Clock,
+  Search,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTabs } from '../../context/TabsContext';
+import { useSearch } from '../../context/SearchContext';
 import { FileTreeNode } from './FileTreeNode';
 
 export const FileTree: React.FC = () => {
@@ -26,6 +28,7 @@ export const FileTree: React.FC = () => {
   } = useWorkspace();
 
   const { openFile } = useTabs();
+  const { openSearch } = useSearch();
 
   const [isCreatingFile, setIsCreatingFile] = useState(false);
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -166,6 +169,15 @@ export const FileTree: React.FC = () => {
         </span>
 
         <div className="flex items-center gap-0.5 text-gray-500 dark:text-gray-400">
+          <button
+            type="button"
+            onClick={() => openSearch('files')}
+            className="p-1 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+            title="Search Workspace (Ctrl+P / Ctrl+Shift+F)"
+          >
+            <Search className="w-3.5 h-3.5" />
+          </button>
+
           <button
             type="button"
             onClick={() => handleCreatePrompt('file')}

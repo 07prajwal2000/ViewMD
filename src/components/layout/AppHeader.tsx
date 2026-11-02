@@ -1,9 +1,10 @@
 import React from 'react';
-import { PanelLeft, BookOpen } from 'lucide-react';
+import { PanelLeft, BookOpen, Search } from 'lucide-react';
 import { RecentsDropdown } from '../common/RecentsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { WrapToggle } from '../common/WrapToggle';
 import { useTabs } from '../../context/TabsContext';
+import { useSearch } from '../../context/SearchContext';
 import { pluginRegistry } from '../../plugins';
 import type { ViewerHeaderActionProps } from '../../types/plugin';
 
@@ -14,6 +15,7 @@ interface AppHeaderProps {
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSidebar }) => {
   const { activeTab, saveActiveFile } = useTabs();
+  const { openSearch } = useSearch();
 
   // Determine active plugin header actions if any
   let HeaderActionComponent: React.ComponentType<ViewerHeaderActionProps> | null = null;
@@ -58,8 +60,21 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
         )}
       </div>
 
-      {/* Right section: Theme Switcher, Wrap Text & Links */}
+      {/* Right section: Search, Theme Switcher, Wrap Text & Links */}
       <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => openSearch('files')}
+          className="flex items-center gap-2 px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800/80 dark:hover:bg-gray-800 border border-gray-200/60 dark:border-gray-700/60 rounded-md transition-colors cursor-pointer mr-0.5"
+          title="Search workspace (Ctrl+P / Ctrl+Shift+F)"
+        >
+          <Search className="w-3.5 h-3.5 text-gray-400" />
+          <span className="hidden sm:inline">Search...</span>
+          <kbd className="hidden md:inline-block px-1 py-0.2 text-[9px] font-mono bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded text-gray-500 dark:text-gray-400">
+            Ctrl+P
+          </kbd>
+        </button>
+
         <WrapToggle />
         <ThemeToggle />
 

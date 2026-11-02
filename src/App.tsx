@@ -4,6 +4,7 @@ import { FileText, FolderOpen, AlertTriangle } from 'lucide-react';
 import { AppHeader } from './components/layout/AppHeader';
 import { TabBar } from './components/layout/TabBar';
 import { FileTree } from './components/filetree/FileTree';
+import { WorkspaceSearchModal } from './components/search/WorkspaceSearchModal';
 import { useTabs, type PaneType } from './context/TabsContext';
 import { useWorkspace } from './context/WorkspaceContext';
 import { pluginRegistry } from './plugins';
@@ -84,8 +85,10 @@ export const App: React.FC = () => {
             </button>
           )}
 
-          <div className="mt-8 flex items-center gap-4 text-[11px] text-gray-400">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] text-gray-400">
             <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+B</kbd> Toggle Sidebar</span>
+            <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+P</kbd> Quick Search</span>
+            <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+Shift+F</kbd> Find in Files</span>
             <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+S</kbd> Save File</span>
           </div>
         </div>
@@ -223,6 +226,9 @@ export const App: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Global Workspace Fuzzy Search & Quick Open Modal */}
+      <WorkspaceSearchModal />
     </div>
   );
 };
