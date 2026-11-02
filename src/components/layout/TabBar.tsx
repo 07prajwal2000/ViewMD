@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, File, Pin, Columns2, ArrowRightLeft } from 'lucide-react';
+import { X, FileText, File, FileCode, Pin, Columns2, ArrowRightLeft } from 'lucide-react';
 import { useTabs, type PaneType } from '../../context/TabsContext';
 import type { TabItem } from '../../types/plugin';
 
@@ -34,7 +34,11 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
     if (name.endsWith('.pdf')) {
       return <File className="w-3.5 h-3.5 text-rose-500 shrink-0" />;
     }
-    return <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+    const ext = name.split('.').pop()?.toLowerCase();
+    if (ext === 'md' || ext === 'markdown') {
+      return <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+    }
+    return <FileCode className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
   };
 
   const handleDragStart = (e: React.DragEvent, tab: TabItem, index: number) => {

@@ -6,7 +6,7 @@ import { MarkdownToolbar } from './MarkdownToolbar';
 export const markdownPlugin: ViewerPlugin = {
   id: 'markdown',
   name: 'Markdown',
-  extensions: ['.md', '.markdown', '.mdown', '.mkd', '.txt'],
+  extensions: ['.md', '.markdown', '.mdown', '.mkd'],
   icon: FileText,
   supportsEditing: true,
   component: MarkdownViewer,
