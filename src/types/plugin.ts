@@ -9,6 +9,9 @@ export interface TabItem {
   content: string | Blob;
   isDirty: boolean;
   pluginId: string;
+  isPinned?: boolean;
+  isMissing?: boolean;
+  errorMessage?: string;
 }
 
 export interface ViewerProps {

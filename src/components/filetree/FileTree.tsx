@@ -21,8 +21,8 @@ export const FileTree: React.FC = () => {
     openFolder,
     openRecentFolder,
     refreshTree,
-    createFile,
-    createFolder,
+    createItem,
+    moveNode,
   } = useWorkspace();
 
   const { openFile } = useTabs();
@@ -31,6 +31,7 @@ export const FileTree: React.FC = () => {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [targetDir, setTargetDir] = useState<FileSystemDirectoryHandle | undefined>(undefined);
+  const [isRootDragOver, setIsRootDragOver] = useState(false);
 
   const handleCreatePrompt = (
     type: 'file' | 'folder',
@@ -49,22 +50,54 @@ export const FileTree: React.FC = () => {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = newItemName.trim();
-    if (!name) return;
+    const rawName = newItemName.trim();
+    if (!rawName) return;
 
     if (isCreatingFile) {
-      // Ensure .md extension if no extension was provided
-      const finalName = name.includes('.') ? name : `${name}.md`;
-      const newEntry = await createFile(finalName, targetDir);
+      // If no extension given at end of path, default to .md
+      const segments = rawName.split('/');
+      const last = segments[segments.length - 1];
+      const withExt = last.includes('.') ? rawName : `${rawName}.md`;
+
+      const newEntry = await createItem(withExt, false, targetDir);
       if (newEntry) {
         openFile(newEntry);
       }
       setIsCreatingFile(false);
     } else if (isCreatingFolder) {
-      await createFolder(name, targetDir);
+      await createItem(rawName, true, targetDir);
       setIsCreatingFolder(false);
     }
     setNewItemName('');
+  };
+
+  const findEntryByPath = (items: typeof fileTree, targetPath: string): typeof fileTree[0] | null => {
+    for (const item of items) {
+      if (item.path === targetPath) return item;
+      if (item.children) {
+        const found = findEntryByPath(item.children, targetPath);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const handleRootDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsRootDragOver(false);
+    if (!currentDirectory) return;
+
+    try {
+      const dataStr = e.dataTransfer.getData('application/json');
+      if (!dataStr) return;
+      const data = JSON.parse(dataStr) as { path: string };
+      const sourceEntry = findEntryByPath(fileTree, data.path);
+      if (sourceEntry && sourceEntry.parentDirHandle !== currentDirectory) {
+        await moveNode(sourceEntry, currentDirectory);
+      }
+    } catch (err) {
+      console.error('Failed to move to root:', err);
+    }
   };
 
   if (!currentDirectory) {
@@ -115,7 +148,17 @@ export const FileTree: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50/50 dark:bg-[#161b22] select-none">
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsRootDragOver(true);
+      }}
+      onDragLeave={() => setIsRootDragOver(false)}
+      onDrop={handleRootDrop}
+      className={`h-full flex flex-col bg-gray-50/50 dark:bg-[#161b22] select-none ${
+        isRootDragOver ? 'ring-2 ring-inset ring-blue-500/50' : ''
+      }`}
+    >
       {/* Explorer Header */}
       <div className="h-9 px-3 flex items-center justify-between border-b border-gray-200 dark:border-gray-800/80 shrink-0">
         <span className="text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase truncate">
@@ -127,7 +170,7 @@ export const FileTree: React.FC = () => {
             type="button"
             onClick={() => handleCreatePrompt('file')}
             className="p-1 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
-            title="New Markdown File"
+            title="New File (supports sub/folder/file.md)"
           >
             <FilePlus className="w-3.5 h-3.5" />
           </button>
@@ -136,7 +179,7 @@ export const FileTree: React.FC = () => {
             type="button"
             onClick={() => handleCreatePrompt('folder')}
             className="p-1 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200/60 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
-            title="New Folder"
+            title="New Folder (supports path/subfolder)"
           >
             <FolderPlus className="w-3.5 h-3.5" />
           </button>
@@ -166,11 +209,11 @@ export const FileTree: React.FC = () => {
                 setIsCreatingFolder(false);
               }
             }}
-            placeholder={isCreatingFile ? 'filename.md' : 'folder name'}
+            placeholder={isCreatingFile ? 'folder/file.md' : 'folder/subfolder'}
             className="w-full text-xs px-2 py-1 rounded bg-white dark:bg-gray-900 border border-blue-500 focus:outline-hidden text-gray-900 dark:text-gray-100 shadow-2xs"
           />
           <div className="text-[10px] text-gray-400 mt-1 flex justify-between px-0.5">
-            <span>Press Enter to create</span>
+            <span>Use `/` to create subfolders automatically</span>
             <button
               type="button"
               onClick={() => {
@@ -197,7 +240,7 @@ export const FileTree: React.FC = () => {
               key={entry.id}
               entry={entry}
               depth={0}
-              onNewFilePrompt={(dir) => handleCreatePrompt('file', dir)}
+              onNewPrompt={(type, dir) => handleCreatePrompt(type, dir)}
             />
           ))
         )}

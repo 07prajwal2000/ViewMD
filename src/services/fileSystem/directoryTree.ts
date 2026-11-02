@@ -26,6 +26,7 @@ export async function readDirectoryTree(
         kind: 'directory',
         handle: entry,
         dirHandle: subDirHandle,
+        parentDirHandle: dirHandle,
         children,
         isOpen: false,
       });
@@ -37,6 +38,7 @@ export async function readDirectoryTree(
         kind: 'file',
         handle: entry,
         fileHandle: entry as FileSystemFileHandle,
+        parentDirHandle: dirHandle,
       });
     }
   }

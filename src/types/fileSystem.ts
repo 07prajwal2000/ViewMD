@@ -6,6 +6,7 @@ export interface FileEntry {
   handle: FileSystemHandle;
   fileHandle?: FileSystemFileHandle;
   dirHandle?: FileSystemDirectoryHandle;
+  parentDirHandle?: FileSystemDirectoryHandle;
   children?: FileEntry[];
   isOpen?: boolean;
 }

@@ -3,8 +3,10 @@ import type { FileEntry, RecentWorkspace } from '../types/fileSystem';
 import {
   openDirectoryPicker,
   verifyPermission,
-  createFileInDir,
-  createSubDirInDir,
+  createPathRecursive,
+  deleteEntry,
+  renameEntry,
+  moveEntry,
 } from '../services/fileSystem/fileAccess';
 import { readDirectoryTree } from '../services/fileSystem/directoryTree';
 import {
@@ -23,8 +25,17 @@ interface WorkspaceContextType {
   openRecentFolder: (recent: RecentWorkspace) => Promise<boolean>;
   removeRecent: (name: string) => Promise<void>;
   refreshTree: () => Promise<void>;
-  createFile: (name: string, targetDirHandle?: FileSystemDirectoryHandle) => Promise<FileEntry | null>;
-  createFolder: (name: string, targetDirHandle?: FileSystemDirectoryHandle) => Promise<boolean>;
+  createItem: (
+    pathWithSlashes: string,
+    isDirectory: boolean,
+    targetDirHandle?: FileSystemDirectoryHandle
+  ) => Promise<FileEntry | null>;
+  deleteNode: (entry: FileEntry) => Promise<boolean>;
+  renameNode: (entry: FileEntry, newName: string) => Promise<boolean>;
+  moveNode: (
+    sourceEntry: FileEntry,
+    targetDirHandle: FileSystemDirectoryHandle
+  ) => Promise<boolean>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -92,7 +103,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return true;
       } catch (err) {
         console.error('Failed to open recent folder:', err);
-        // If handle is no longer valid or accessible, remove it from recents
         await removeRecentWorkspace(recent.name);
         const updated = await getRecentWorkspaces();
         setRecentWorkspaces(updated);
@@ -108,43 +118,99 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setRecentWorkspaces(updated);
   }, []);
 
-  const createFile = useCallback(
-    async (name: string, targetDirHandle?: FileSystemDirectoryHandle): Promise<FileEntry | null> => {
-      const dir = targetDirHandle || currentDirectory;
-      if (!dir) return null;
+  const createItem = useCallback(
+    async (
+      pathWithSlashes: string,
+      isDirectory: boolean,
+      targetDirHandle?: FileSystemDirectoryHandle
+    ): Promise<FileEntry | null> => {
+      const baseDir = targetDirHandle || currentDirectory;
+      if (!baseDir) return null;
 
       try {
-        const fileHandle = await createFileInDir(dir, name);
+        const { handle, finalName, parentDir } = await createPathRecursive(
+          baseDir,
+          pathWithSlashes,
+          isDirectory
+        );
         await refreshTree();
+
         return {
-          id: name,
-          name,
-          path: name,
-          kind: 'file',
-          handle: fileHandle,
-          fileHandle,
+          id: pathWithSlashes,
+          name: finalName,
+          path: pathWithSlashes,
+          kind: isDirectory ? 'directory' : 'file',
+          handle,
+          fileHandle: isDirectory ? undefined : (handle as FileSystemFileHandle),
+          dirHandle: isDirectory ? (handle as FileSystemDirectoryHandle) : undefined,
+          parentDirHandle: parentDir,
         };
       } catch (err) {
-        console.error('Failed to create file:', err);
-        alert('Failed to create file: ' + (err instanceof Error ? err.message : String(err)));
+        console.error('Failed to create item:', err);
+        alert('Failed to create item: ' + (err instanceof Error ? err.message : String(err)));
         return null;
       }
     },
     [currentDirectory, refreshTree]
   );
 
-  const createFolder = useCallback(
-    async (name: string, targetDirHandle?: FileSystemDirectoryHandle): Promise<boolean> => {
-      const dir = targetDirHandle || currentDirectory;
-      if (!dir) return false;
+  const deleteNode = useCallback(
+    async (entry: FileEntry): Promise<boolean> => {
+      const parentDir = entry.parentDirHandle || currentDirectory;
+      if (!parentDir) return false;
+
+      const isDir = entry.kind === 'directory';
+      const confirmed = window.confirm(
+        `Are you sure you want to delete ${isDir ? 'folder' : 'file'} "${entry.name}"?`
+      );
+      if (!confirmed) return false;
 
       try {
-        await createSubDirInDir(dir, name);
+        await deleteEntry(parentDir, entry.name, isDir);
         await refreshTree();
         return true;
       } catch (err) {
-        console.error('Failed to create folder:', err);
-        alert('Failed to create folder: ' + (err instanceof Error ? err.message : String(err)));
+        console.error('Failed to delete:', err);
+        alert('Failed to delete: ' + (err instanceof Error ? err.message : String(err)));
+        return false;
+      }
+    },
+    [currentDirectory, refreshTree]
+  );
+
+  const renameNode = useCallback(
+    async (entry: FileEntry, newName: string): Promise<boolean> => {
+      const parentDir = entry.parentDirHandle || currentDirectory;
+      if (!parentDir || !newName || newName === entry.name) return false;
+
+      try {
+        await renameEntry(parentDir, entry.handle, entry.name, newName);
+        await refreshTree();
+        return true;
+      } catch (err) {
+        console.error('Failed to rename:', err);
+        alert('Failed to rename: ' + (err instanceof Error ? err.message : String(err)));
+        return false;
+      }
+    },
+    [currentDirectory, refreshTree]
+  );
+
+  const moveNode = useCallback(
+    async (
+      sourceEntry: FileEntry,
+      targetDirHandle: FileSystemDirectoryHandle
+    ): Promise<boolean> => {
+      const sourceParentDir = sourceEntry.parentDirHandle || currentDirectory;
+      if (!sourceParentDir) return false;
+
+      try {
+        await moveEntry(sourceParentDir, sourceEntry.handle, targetDirHandle);
+        await refreshTree();
+        return true;
+      } catch (err) {
+        console.error('Failed to move:', err);
+        alert('Failed to move: ' + (err instanceof Error ? err.message : String(err)));
         return false;
       }
     },
@@ -163,8 +229,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         openRecentFolder,
         removeRecent,
         refreshTree,
-        createFile,
-        createFolder,
+        createItem,
+        deleteNode,
+        renameNode,
+        moveNode,
       }}
     >
       {children}
