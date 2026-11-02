@@ -116,11 +116,11 @@ export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, on
   return (
     <div className="h-full w-full select-text">
       <Group orientation="horizontal" className="h-full w-full">
-        <Panel defaultSize={50} minSize={20} className="h-full">
+        <Panel defaultSize="50%" minSize="20%" className="h-full">
           {renderEditor()}
         </Panel>
         <Separator className="relative w-1 bg-gray-200 dark:bg-gray-800 hover:bg-blue-500 active:bg-blue-600 transition-colors cursor-col-resize z-10 after:absolute after:inset-y-0 after:-left-2 after:-right-2 after:content-['']" />
-        <Panel defaultSize={50} minSize={20} className="h-full">
+        <Panel defaultSize="50%" minSize="20%" className="h-full">
           {renderPreview()}
         </Panel>
       </Group>

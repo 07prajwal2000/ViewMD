@@ -100,7 +100,7 @@ export const App: React.FC = () => {
         {isSidebarOpen ? (
           <Group orientation="horizontal" className="h-full w-full">
             {/* Left Sidebar (File Tree) - resizable up to half the screen (50%) */}
-            <Panel defaultSize={20} minSize={8} maxSize={50} className="h-full">
+            <Panel defaultSize="22%" minSize="180px" maxSize="50%" className="h-full">
               <FileTree />
             </Panel>
 
@@ -108,7 +108,7 @@ export const App: React.FC = () => {
             <Separator className="relative w-1 bg-gray-200 dark:bg-gray-800 hover:bg-blue-500 active:bg-blue-600 transition-colors cursor-col-resize z-20 after:absolute after:inset-y-0 after:-left-2 after:-right-2 after:content-['']" />
 
             {/* Right Main Panel (Tabs + Viewer) */}
-            <Panel defaultSize={80} minSize={40} className="h-full flex flex-col overflow-hidden">
+            <Panel defaultSize="78%" minSize="40%" className="h-full flex flex-col overflow-hidden">
               <TabBar />
               <div className="flex-1 overflow-hidden relative">
                 {renderActiveViewer()}
