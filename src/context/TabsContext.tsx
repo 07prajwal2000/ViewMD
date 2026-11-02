@@ -14,45 +14,57 @@ import {
 } from '../services/storage/workspaceSessions';
 import { useWorkspace } from './WorkspaceContext';
 
+export type PaneType = 'primary' | 'secondary';
+
 interface TabsContextType {
-  tabs: TabItem[];
-  activeTabId: string | null;
-  activeTab: TabItem | undefined;
-  splitActiveTabId: string | null;
-  splitActiveTab: TabItem | undefined;
+  primaryTabs: TabItem[];
+  secondaryTabs: TabItem[];
+  activePrimaryTabId: string | null;
+  activeSecondaryTabId: string | null;
+  activePrimaryTab: TabItem | undefined;
+  activeSecondaryTab: TabItem | undefined;
+  activeTab: TabItem | undefined; // Active tab in the currently focused pane
+  focusedPane: PaneType;
+  setFocusedPane: (pane: PaneType) => void;
   isSplitView: boolean;
-  openFile: (entry: FileEntry, openInSplitPane?: boolean) => Promise<void>;
-  closeTab: (tabId: string) => void;
-  setActiveTabId: (tabId: string) => void;
-  setSplitActiveTabId: (tabId: string | null) => void;
+  openFile: (entry: FileEntry, targetPane?: PaneType) => Promise<void>;
+  closeTab: (tabId: string, pane: PaneType) => void;
+  setActiveTabId: (tabId: string, pane: PaneType) => void;
   toggleSplitView: () => void;
-  togglePinTab: (tabId: string) => void;
-  reorderTabs: (sourceIndex: number, destinationIndex: number) => void;
+  openToSide: (tabId: string, fromPane: PaneType) => void;
+  moveTabToPane: (tabId: string, fromPane: PaneType, toPane: PaneType) => void;
+  togglePinTab: (tabId: string, pane: PaneType) => void;
+  reorderTabs: (sourceIndex: number, destinationIndex: number, pane: PaneType) => void;
   updateTabContent: (tabId: string, content: string) => void;
   saveTab: (tabId: string) => Promise<boolean>;
-  saveActiveFile: (isSplitPaneActive?: boolean) => Promise<boolean>;
+  saveActiveFile: (targetPane?: PaneType) => Promise<boolean>;
 }
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentDirectory, directoryName } = useWorkspace();
-  const [tabs, setTabs] = useState<TabItem[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
-  const [splitActiveTabId, setSplitActiveTabId] = useState<string | null>(null);
+
+  const [primaryTabs, setPrimaryTabs] = useState<TabItem[]>([]);
+  const [secondaryTabs, setSecondaryTabs] = useState<TabItem[]>([]);
+  const [activePrimaryTabId, setActivePrimaryTabId] = useState<string | null>(null);
+  const [activeSecondaryTabId, setActiveSecondaryTabId] = useState<string | null>(null);
+  const [focusedPane, setFocusedPane] = useState<PaneType>('primary');
   const [isSplitView, setIsSplitView] = useState<boolean>(false);
 
-  const activeTab = tabs.find((t) => t.id === activeTabId);
-  const splitActiveTab = tabs.find((t) => t.id === splitActiveTabId);
-
   const isRestoringSession = useRef(false);
+
+  const activePrimaryTab = primaryTabs.find((t) => t.id === activePrimaryTabId);
+  const activeSecondaryTab = secondaryTabs.find((t) => t.id === activeSecondaryTabId);
+  const activeTab = focusedPane === 'secondary' && isSplitView ? activeSecondaryTab || activePrimaryTab : activePrimaryTab;
 
   // Restore workspace session when currentDirectory changes
   useEffect(() => {
     if (!currentDirectory || !directoryName) {
-      setTabs([]);
-      setActiveTabId(null);
-      setSplitActiveTabId(null);
+      setPrimaryTabs([]);
+      setSecondaryTabs([]);
+      setActivePrimaryTabId(null);
+      setActiveSecondaryTabId(null);
       setIsSplitView(false);
       return;
     }
@@ -61,101 +73,111 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isRestoringSession.current = true;
       const session = getWorkspaceSession(directoryName);
 
-      if (!session || session.openPaths.length === 0) {
-        setTabs([]);
-        setActiveTabId(null);
-        setSplitActiveTabId(null);
+      if (!session) {
+        setPrimaryTabs([]);
+        setSecondaryTabs([]);
+        setActivePrimaryTabId(null);
+        setActiveSecondaryTabId(null);
         setIsSplitView(false);
         isRestoringSession.current = false;
         return;
       }
 
-      const loadedTabs: TabItem[] = [];
+      const pPaths = session.primaryPaths || session.openPaths || [];
+      const sPaths = session.secondaryPaths || [];
 
-      for (const filePath of session.openPaths) {
-        const isPinned = session.pinnedPaths.includes(filePath);
-        const resolved = await resolvePath(currentDirectory, filePath);
+      const loadTabsFromPaths = async (paths: string[]): Promise<TabItem[]> => {
+        const loaded: TabItem[] = [];
+        for (const filePath of paths) {
+          const isPinned = session.pinnedPaths ? session.pinnedPaths.includes(filePath) : false;
+          const resolved = await resolvePath(currentDirectory, filePath);
 
-        if (!resolved || !resolved.fileHandle) {
-          // File was deleted or moved - show missing error tab
-          const fileName = filePath.split('/').pop() || filePath;
-          const plugin = pluginRegistry.getForFile(fileName);
-          loadedTabs.push({
-            id: filePath,
-            name: fileName,
-            path: filePath,
-            fileHandle: null,
-            content: '',
-            isDirty: false,
-            pluginId: plugin.id,
-            isPinned,
-            isMissing: true,
-            errorMessage: `File "${filePath}" could not be found. It may have been moved, renamed, or deleted from disk.`,
-          });
-          continue;
-        }
-
-        try {
-          const plugin = pluginRegistry.getForFile(resolved.fileHandle.name);
-          let content: string | Blob = '';
-
-          if (plugin.id === 'pdf') {
-            content = await readFileAsBlob(resolved.fileHandle);
-          } else {
-            content = await readFileAsText(resolved.fileHandle);
+          if (!resolved || !resolved.fileHandle) {
+            const fileName = filePath.split('/').pop() || filePath;
+            const plugin = pluginRegistry.getForFile(fileName);
+            loaded.push({
+              id: filePath,
+              name: fileName,
+              path: filePath,
+              fileHandle: null,
+              content: '',
+              isDirty: false,
+              pluginId: plugin.id,
+              isPinned,
+              isMissing: true,
+              errorMessage: `File "${filePath}" could not be found. It may have been moved, renamed, or deleted from disk.`,
+            });
+            continue;
           }
 
-          loadedTabs.push({
-            id: filePath,
-            name: resolved.fileHandle.name,
-            path: filePath,
-            fileHandle: resolved.fileHandle,
-            content,
-            isDirty: false,
-            pluginId: plugin.id,
-            isPinned,
-          });
-        } catch (err) {
-          console.error(`Failed to read file during session restore: ${filePath}`, err);
-          loadedTabs.push({
-            id: filePath,
-            name: filePath.split('/').pop() || filePath,
-            path: filePath,
-            fileHandle: null,
-            content: '',
-            isDirty: false,
-            pluginId: 'markdown',
-            isPinned,
-            isMissing: true,
-            errorMessage: `Error reading file: ${err instanceof Error ? err.message : String(err)}`,
-          });
+          try {
+            const plugin = pluginRegistry.getForFile(resolved.fileHandle.name);
+            let content: string | Blob = '';
+
+            if (plugin.id === 'pdf') {
+              content = await readFileAsBlob(resolved.fileHandle);
+            } else {
+              content = await readFileAsText(resolved.fileHandle);
+            }
+
+            loaded.push({
+              id: filePath,
+              name: resolved.fileHandle.name,
+              path: filePath,
+              fileHandle: resolved.fileHandle,
+              content,
+              isDirty: false,
+              pluginId: plugin.id,
+              isPinned,
+            });
+          } catch (err) {
+            console.error(`Failed to read file during session restore: ${filePath}`, err);
+            loaded.push({
+              id: filePath,
+              name: filePath.split('/').pop() || filePath,
+              path: filePath,
+              fileHandle: null,
+              content: '',
+              isDirty: false,
+              pluginId: 'markdown',
+              isPinned,
+              isMissing: true,
+              errorMessage: `Error reading file: ${err instanceof Error ? err.message : String(err)}`,
+            });
+          }
         }
+
+        return loaded.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return 0;
+        });
+      };
+
+      const restoredPrimary = await loadTabsFromPaths(pPaths);
+      const restoredSecondary = await loadTabsFromPaths(sPaths);
+
+      setPrimaryTabs(restoredPrimary);
+      setSecondaryTabs(restoredSecondary);
+
+      const pActive = session.activePrimaryPath || session.activePath;
+      if (pActive && restoredPrimary.some((t) => t.id === pActive)) {
+        setActivePrimaryTabId(pActive);
+      } else if (restoredPrimary.length > 0) {
+        setActivePrimaryTabId(restoredPrimary[0].id);
       }
 
-      // Sort pinned tabs to the front
-      loadedTabs.sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return 0;
-      });
-
-      setTabs(loadedTabs);
-
-      if (session.activePath && loadedTabs.some((t) => t.id === session.activePath)) {
-        setActiveTabId(session.activePath);
-      } else if (loadedTabs.length > 0) {
-        setActiveTabId(loadedTabs[0].id);
-      }
-
-      if (session.isSplit) {
+      if (session.isSplit && restoredSecondary.length > 0) {
         setIsSplitView(true);
-        if (session.splitActivePath && loadedTabs.some((t) => t.id === session.splitActivePath)) {
-          setSplitActiveTabId(session.splitActivePath);
-        } else if (loadedTabs.length > 1) {
-          setSplitActiveTabId(loadedTabs[1].id);
+        const sActive = session.activeSecondaryPath || session.splitActivePath;
+        if (sActive && restoredSecondary.some((t) => t.id === sActive)) {
+          setActiveSecondaryTabId(sActive);
+        } else {
+          setActiveSecondaryTabId(restoredSecondary[0].id);
         }
       } else {
         setIsSplitView(false);
+        setActiveSecondaryTabId(null);
       }
 
       isRestoringSession.current = false;
@@ -168,36 +190,56 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!directoryName || isRestoringSession.current) return;
 
+    const allPinned = [
+      ...primaryTabs.filter((t) => t.isPinned).map((t) => t.path),
+      ...secondaryTabs.filter((t) => t.isPinned).map((t) => t.path),
+    ];
+
     saveWorkspaceSession(directoryName, {
-      openPaths: tabs.map((t) => t.path),
-      activePath: activeTabId,
-      pinnedPaths: tabs.filter((t) => t.isPinned).map((t) => t.path),
-      splitActivePath: splitActiveTabId,
+      primaryPaths: primaryTabs.map((t) => t.path),
+      activePrimaryPath: activePrimaryTabId,
+      secondaryPaths: secondaryTabs.map((t) => t.path),
+      activeSecondaryPath: activeSecondaryTabId,
+      pinnedPaths: Array.from(new Set(allPinned)),
       isSplit: isSplitView,
     });
-  }, [tabs, activeTabId, splitActiveTabId, isSplitView, directoryName]);
+  }, [
+    primaryTabs,
+    secondaryTabs,
+    activePrimaryTabId,
+    activeSecondaryTabId,
+    isSplitView,
+    directoryName,
+  ]);
 
   const openFile = useCallback(
-    async (entry: FileEntry, openInSplitPane = false) => {
+    async (entry: FileEntry, targetPane?: PaneType) => {
       if (entry.kind !== 'file' || !entry.fileHandle) return;
 
-      const existingIndex = tabs.findIndex((t) => t.id === entry.id);
+      const pane = targetPane || (isSplitView ? focusedPane : 'primary');
+      const tabs = pane === 'primary' ? primaryTabs : secondaryTabs;
+      const setTabs = pane === 'primary' ? setPrimaryTabs : setSecondaryTabs;
+      const setActiveId = pane === 'primary' ? setActivePrimaryTabId : setActiveSecondaryTabId;
 
-      if (existingIndex !== -1) {
-        if (openInSplitPane) {
-          setIsSplitView(true);
-          setSplitActiveTabId(entry.id);
-        } else {
-          setActiveTabId(entry.id);
-        }
+      // Check if already open in target pane
+      const existing = tabs.find((t) => t.id === entry.id);
+      if (existing) {
+        setActiveId(entry.id);
+        setFocusedPane(pane);
         return;
       }
 
-      try {
-        const plugin = pluginRegistry.getForFile(entry.name);
-        let content: string | Blob = '';
+      // Check if already open in other pane to reuse existing in-memory content
+      const otherTabs = pane === 'primary' ? secondaryTabs : primaryTabs;
+      const inOtherPane = otherTabs.find((t) => t.id === entry.id);
 
-        if (plugin.id === 'pdf') {
+      try {
+        let content: string | Blob = '';
+        const plugin = pluginRegistry.getForFile(entry.name);
+
+        if (inOtherPane) {
+          content = inOtherPane.content;
+        } else if (plugin.id === 'pdf') {
           content = await readFileAsBlob(entry.fileHandle);
         } else {
           content = await readFileAsText(entry.fileHandle);
@@ -209,72 +251,78 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
           path: entry.path,
           fileHandle: entry.fileHandle,
           content,
-          isDirty: false,
+          isDirty: inOtherPane ? inOtherPane.isDirty : false,
           pluginId: plugin.id,
           isPinned: false,
         };
 
         setTabs((prev) => [...prev, newTab]);
-
-        if (openInSplitPane) {
-          setIsSplitView(true);
-          setSplitActiveTabId(newTab.id);
-        } else {
-          setActiveTabId(newTab.id);
-        }
+        setActiveId(newTab.id);
+        setFocusedPane(pane);
       } catch (err) {
         console.error('Failed to open file:', err);
         alert('Failed to read file: ' + (err instanceof Error ? err.message : String(err)));
       }
     },
-    [tabs]
+    [primaryTabs, secondaryTabs, focusedPane, isSplitView]
   );
 
   const closeTab = useCallback(
-    (tabId: string) => {
-      setTabs((prev) => {
-        const tabIndex = prev.findIndex((t) => t.id === tabId);
-        if (tabIndex === -1) return prev;
+    (tabId: string, pane: PaneType) => {
+      const isPrimary = pane === 'primary';
+      const tabs = isPrimary ? primaryTabs : secondaryTabs;
+      const setTabs = isPrimary ? setPrimaryTabs : setSecondaryTabs;
+      const activeId = isPrimary ? activePrimaryTabId : activeSecondaryTabId;
+      const setActiveId = isPrimary ? setActivePrimaryTabId : setActiveSecondaryTabId;
 
-        const tabToClose = prev[tabIndex];
-        if (tabToClose.isDirty) {
-          const confirmed = window.confirm(
-            `"${tabToClose.name}" has unsaved changes. Are you sure you want to close it?`
-          );
-          if (!confirmed) return prev;
+      const tabIndex = tabs.findIndex((t) => t.id === tabId);
+      if (tabIndex === -1) return;
+
+      const tabToClose = tabs[tabIndex];
+      if (tabToClose.isDirty) {
+        const confirmed = window.confirm(
+          `"${tabToClose.name}" has unsaved changes. Are you sure you want to close it?`
+        );
+        if (!confirmed) return;
+      }
+
+      const nextTabs = tabs.filter((t) => t.id !== tabId);
+      setTabs(nextTabs);
+
+      // Adjust active tab in this pane
+      if (activeId === tabId) {
+        if (nextTabs.length === 0) {
+          setActiveId(null);
+        } else if (tabIndex < nextTabs.length) {
+          setActiveId(nextTabs[tabIndex].id);
+        } else {
+          setActiveId(nextTabs[nextTabs.length - 1].id);
         }
+      }
 
-        const nextTabs = prev.filter((t) => t.id !== tabId);
-
-        // Adjust primary active tab
-        if (activeTabId === tabId) {
-          if (nextTabs.length === 0) {
-            setActiveTabId(null);
-          } else if (tabIndex < nextTabs.length) {
-            setActiveTabId(nextTabs[tabIndex].id);
-          } else {
-            setActiveTabId(nextTabs[nextTabs.length - 1].id);
-          }
-        }
-
-        // Adjust split active tab
-        if (splitActiveTabId === tabId) {
-          if (nextTabs.length <= 1) {
-            setSplitActiveTabId(null);
-            setIsSplitView(false);
-          } else {
-            const fallback = nextTabs.find((t) => t.id !== activeTabId) || nextTabs[0];
-            setSplitActiveTabId(fallback.id);
-          }
-        }
-
-        return nextTabs;
-      });
+      // If secondary pane closed its last tab, close split view automatically
+      if (!isPrimary && nextTabs.length === 0) {
+        setIsSplitView(false);
+        setActiveSecondaryTabId(null);
+        setFocusedPane('primary');
+      }
     },
-    [activeTabId, splitActiveTabId]
+    [primaryTabs, secondaryTabs, activePrimaryTabId, activeSecondaryTabId]
   );
 
-  const togglePinTab = useCallback((tabId: string) => {
+  const setActiveTabId = useCallback((tabId: string, pane: PaneType) => {
+    if (pane === 'primary') {
+      setActivePrimaryTabId(tabId);
+    } else {
+      setActiveSecondaryTabId(tabId);
+    }
+    setFocusedPane(pane);
+  }, []);
+
+  const togglePinTab = useCallback((tabId: string, pane: PaneType) => {
+    const isPrimary = pane === 'primary';
+    const setTabs = isPrimary ? setPrimaryTabs : setSecondaryTabs;
+
     setTabs((prev) => {
       const updated = prev.map((t) => (t.id === tabId ? { ...t, isPinned: !t.isPinned } : t));
       return updated.sort((a, b) => {
@@ -285,7 +333,10 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
-  const reorderTabs = useCallback((sourceIndex: number, destinationIndex: number) => {
+  const reorderTabs = useCallback((sourceIndex: number, destinationIndex: number, pane: PaneType) => {
+    const isPrimary = pane === 'primary';
+    const setTabs = isPrimary ? setPrimaryTabs : setSecondaryTabs;
+
     setTabs((prev) => {
       const copy = [...prev];
       const [removed] = copy.splice(sourceIndex, 1);
@@ -294,45 +345,115 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
+  const openToSide = useCallback(
+    (tabId: string, fromPane: PaneType) => {
+      const sourceTabs = fromPane === 'primary' ? primaryTabs : secondaryTabs;
+      const targetTabs = fromPane === 'primary' ? secondaryTabs : primaryTabs;
+      const setTargetTabs = fromPane === 'primary' ? setSecondaryTabs : setPrimaryTabs;
+      const setTargetActive = fromPane === 'primary' ? setActiveSecondaryTabId : setActivePrimaryTabId;
+
+      const tab = sourceTabs.find((t) => t.id === tabId);
+      if (!tab) return;
+
+      setIsSplitView(true);
+
+      // Check if already in target
+      if (!targetTabs.some((t) => t.id === tabId)) {
+        setTargetTabs((prev) => [...prev, { ...tab }]);
+      }
+      setTargetActive(tabId);
+      setFocusedPane(fromPane === 'primary' ? 'secondary' : 'primary');
+    },
+    [primaryTabs, secondaryTabs]
+  );
+
+  const moveTabToPane = useCallback(
+    (tabId: string, fromPane: PaneType, toPane: PaneType) => {
+      if (fromPane === toPane) return;
+
+      const sourceTabs = fromPane === 'primary' ? primaryTabs : secondaryTabs;
+      const setSourceTabs = fromPane === 'primary' ? setPrimaryTabs : setSecondaryTabs;
+      const setTargetTabs = toPane === 'primary' ? setPrimaryTabs : setSecondaryTabs;
+      const setTargetActive = toPane === 'primary' ? setActivePrimaryTabId : setActiveSecondaryTabId;
+
+      const tab = sourceTabs.find((t) => t.id === tabId);
+      if (!tab) return;
+
+      // Remove from source
+      setSourceTabs((prev) => prev.filter((t) => t.id !== tabId));
+
+      // Add to target if not exists
+      setTargetTabs((prev) => {
+        if (prev.some((t) => t.id === tabId)) return prev;
+        return [...prev, tab];
+      });
+
+      setTargetActive(tabId);
+      setFocusedPane(toPane);
+    },
+    [primaryTabs, secondaryTabs]
+  );
+
   const toggleSplitView = useCallback(() => {
     setIsSplitView((prev) => {
       const next = !prev;
-      if (next && !splitActiveTabId) {
-        // Select an adjacent tab or the active tab
-        const alt = tabs.find((t) => t.id !== activeTabId) || activeTab;
-        if (alt) {
-          setSplitActiveTabId(alt.id);
+      if (next) {
+        // Opening split view:
+        if (secondaryTabs.length === 0) {
+          if (primaryTabs.length > 1) {
+            // Move non-active tab or clone active tab to secondary
+            const otherTab = primaryTabs.find((t) => t.id !== activePrimaryTabId) || primaryTabs[0];
+            if (otherTab) {
+              setSecondaryTabs([{ ...otherTab }]);
+              setActiveSecondaryTabId(otherTab.id);
+            }
+          } else if (activePrimaryTab) {
+            // Clone the active tab into secondary pane
+            setSecondaryTabs([{ ...activePrimaryTab }]);
+            setActiveSecondaryTabId(activePrimaryTab.id);
+          }
         }
+        setFocusedPane('secondary');
+      } else {
+        // Closing split view: merge secondary tabs back into primary tabs
+        setPrimaryTabs((prev) => {
+          const merged = [...prev];
+          for (const sTab of secondaryTabs) {
+            if (!merged.some((t) => t.id === sTab.id)) {
+              merged.push(sTab);
+            }
+          }
+          return merged;
+        });
+        setSecondaryTabs([]);
+        setActiveSecondaryTabId(null);
+        setFocusedPane('primary');
       }
       return next;
     });
-  }, [tabs, activeTabId, activeTab, splitActiveTabId]);
+  }, [secondaryTabs, primaryTabs, activePrimaryTabId, activePrimaryTab]);
 
   const updateTabContent = useCallback((tabId: string, content: string) => {
-    setTabs((prev) =>
-      prev.map((tab) => {
-        if (tab.id === tabId) {
-          return {
-            ...tab,
-            content,
-            isDirty: true,
-          };
-        }
-        return tab;
-      })
-    );
+    const updateFn = (prev: TabItem[]) =>
+      prev.map((tab) => (tab.id === tabId ? { ...tab, content, isDirty: true } : tab));
+
+    setPrimaryTabs(updateFn);
+    setSecondaryTabs(updateFn);
   }, []);
 
   const saveTab = useCallback(
     async (tabId: string): Promise<boolean> => {
-      const tab = tabs.find((t) => t.id === tabId);
+      const allTabs = [...primaryTabs, ...secondaryTabs];
+      const tab = allTabs.find((t) => t.id === tabId);
       if (!tab || !tab.fileHandle || !tab.isDirty) return false;
 
       try {
         await writeFile(tab.fileHandle, tab.content);
-        setTabs((prev) =>
-          prev.map((t) => (t.id === tabId ? { ...t, isDirty: false } : t))
-        );
+        const clearDirty = (prev: TabItem[]) =>
+          prev.map((t) => (t.id === tabId ? { ...t, isDirty: false } : t));
+
+        setPrimaryTabs(clearDirty);
+        setSecondaryTabs(clearDirty);
         return true;
       } catch (err) {
         console.error('Failed to save file:', err);
@@ -340,32 +461,38 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
     },
-    [tabs]
+    [primaryTabs, secondaryTabs]
   );
 
   const saveActiveFile = useCallback(
-    async (isSplitPaneActive = false): Promise<boolean> => {
-      const targetId = isSplitPaneActive ? splitActiveTabId : activeTabId;
-      if (!targetId) return false;
-      return saveTab(targetId);
+    async (targetPane?: PaneType): Promise<boolean> => {
+      const pane = targetPane || focusedPane;
+      const activeId = pane === 'primary' ? activePrimaryTabId : activeSecondaryTabId;
+      if (!activeId) return false;
+      return saveTab(activeId);
     },
-    [activeTabId, splitActiveTabId, saveTab]
+    [focusedPane, activePrimaryTabId, activeSecondaryTabId, saveTab]
   );
 
   return (
     <TabsContext.Provider
       value={{
-        tabs,
-        activeTabId,
+        primaryTabs,
+        secondaryTabs,
+        activePrimaryTabId,
+        activeSecondaryTabId,
+        activePrimaryTab,
+        activeSecondaryTab,
         activeTab,
-        splitActiveTabId,
-        splitActiveTab,
+        focusedPane,
+        setFocusedPane,
         isSplitView,
         openFile,
         closeTab,
         setActiveTabId,
-        setSplitActiveTabId,
         toggleSplitView,
+        openToSide,
+        moveTabToPane,
         togglePinTab,
         reorderTabs,
         updateTabContent,

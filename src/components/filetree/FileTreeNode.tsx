@@ -35,11 +35,11 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
-  const { openFile, activeTabId, closeTab, tabs } = useTabs();
+  const { openFile, activePrimaryTabId, activeSecondaryTabId, closeTab } = useTabs();
   const { deleteNode, renameNode, moveNode, fileTree } = useWorkspace();
 
   const isDirectory = entry.kind === 'directory';
-  const isSelected = !isDirectory && activeTabId === entry.id;
+  const isSelected = !isDirectory && (activePrimaryTabId === entry.id || activeSecondaryTabId === entry.id);
 
   // Close 3-dot menu on click outside
   useEffect(() => {
@@ -79,11 +79,9 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
     setIsMenuOpen(false);
     const success = await deleteNode(entry);
     if (success) {
-      // If deleted entry is open in tabs, close it
-      const openTab = tabs.find((t) => t.path === entry.path || t.id === entry.id);
-      if (openTab) {
-        closeTab(openTab.id);
-      }
+      // If deleted entry is open in tabs, close in both panes
+      closeTab(entry.id, 'primary');
+      closeTab(entry.id, 'secondary');
     }
   };
 

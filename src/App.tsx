@@ -4,7 +4,7 @@ import { FileText, FolderOpen, AlertTriangle } from 'lucide-react';
 import { AppHeader } from './components/layout/AppHeader';
 import { TabBar } from './components/layout/TabBar';
 import { FileTree } from './components/filetree/FileTree';
-import { useTabs } from './context/TabsContext';
+import { useTabs, type PaneType } from './context/TabsContext';
 import { useWorkspace } from './context/WorkspaceContext';
 import { pluginRegistry } from './plugins';
 import { getStoredSidebarOpen, setStoredSidebarOpen } from './services/storage/settings';
@@ -13,12 +13,13 @@ import type { TabItem } from './types/plugin';
 export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(getStoredSidebarOpen);
   const {
-    activeTab,
-    splitActiveTab,
+    activePrimaryTab,
+    activeSecondaryTab,
     isSplitView,
     updateTabContent,
     saveActiveFile,
     closeTab,
+    setFocusedPane,
   } = useTabs();
   const { currentDirectory, openFolder } = useWorkspace();
 
@@ -43,7 +44,7 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const renderViewer = (tab: TabItem | undefined, isSplitPane = false) => {
+  const renderViewer = (tab: TabItem | undefined, pane: PaneType) => {
     if (!tab) {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center select-none bg-gray-50/50 dark:bg-[#0d1117]">
@@ -90,7 +91,7 @@ export const App: React.FC = () => {
           </p>
           <button
             type="button"
-            onClick={() => closeTab(tab.id)}
+            onClick={() => closeTab(tab.id, pane)}
             className="px-4 py-2 text-xs bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium cursor-pointer transition-colors"
           >
             Close Tab
@@ -113,7 +114,7 @@ export const App: React.FC = () => {
       <ViewerComponent
         tab={tab}
         onContentChange={(val) => updateTabContent(tab.id, val)}
-        onSave={() => saveActiveFile(isSplitPane)}
+        onSave={() => saveActiveFile(pane)}
       />
     );
   };
@@ -124,9 +125,11 @@ export const App: React.FC = () => {
         <Group orientation="horizontal" className="h-full w-full">
           {/* Primary View Pane */}
           <Panel defaultSize="50%" minSize="20%" className="h-full flex flex-col overflow-hidden">
-            <TabBar pane="primary" />
-            <div className="flex-1 overflow-hidden relative">
-              {renderViewer(activeTab, false)}
+            <div className="h-full w-full flex flex-col overflow-hidden" onClick={() => setFocusedPane('primary')}>
+              <TabBar pane="primary" />
+              <div className="flex-1 overflow-hidden relative">
+                {renderViewer(activePrimaryTab, 'primary')}
+              </div>
             </div>
           </Panel>
 
@@ -135,9 +138,11 @@ export const App: React.FC = () => {
 
           {/* Secondary View Pane (Split View) */}
           <Panel defaultSize="50%" minSize="20%" className="h-full flex flex-col overflow-hidden border-l border-gray-200/50 dark:border-gray-800/50">
-            <TabBar pane="secondary" />
-            <div className="flex-1 overflow-hidden relative">
-              {renderViewer(splitActiveTab, true)}
+            <div className="h-full w-full flex flex-col overflow-hidden" onClick={() => setFocusedPane('secondary')}>
+              <TabBar pane="secondary" />
+              <div className="flex-1 overflow-hidden relative">
+                {renderViewer(activeSecondaryTab, 'secondary')}
+              </div>
             </div>
           </Panel>
         </Group>
@@ -145,10 +150,10 @@ export const App: React.FC = () => {
     }
 
     return (
-      <div className="h-full w-full flex flex-col overflow-hidden">
+      <div className="h-full w-full flex flex-col overflow-hidden" onClick={() => setFocusedPane('primary')}>
         <TabBar pane="primary" />
         <div className="flex-1 overflow-hidden relative">
-          {renderViewer(activeTab, false)}
+          {renderViewer(activePrimaryTab, 'primary')}
         </div>
       </div>
     );

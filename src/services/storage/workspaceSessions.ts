@@ -1,9 +1,14 @@
 export interface WorkspaceSessionState {
-  openPaths: string[];
-  activePath: string | null;
+  primaryPaths: string[];
+  activePrimaryPath: string | null;
+  secondaryPaths: string[];
+  activeSecondaryPath: string | null;
   pinnedPaths: string[];
+  isSplit: boolean;
+  // Backward compatibility
+  openPaths?: string[];
+  activePath?: string | null;
   splitActivePath?: string | null;
-  isSplit?: boolean;
 }
 
 const SESSION_PREFIX = 'viewmd_session_';
