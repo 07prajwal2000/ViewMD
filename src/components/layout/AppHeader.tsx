@@ -1,5 +1,6 @@
 import React from 'react';
-import { PanelLeft, BookOpen, Search } from 'lucide-react';
+import { PanelLeft, Search } from 'lucide-react';
+import { ViewMDLogo } from '../common/ViewMDLogo';
 import { RecentsDropdown } from '../common/RecentsDropdown';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { WrapToggle } from '../common/WrapToggle';
@@ -44,7 +45,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
         </button>
 
         <div className="flex items-center gap-2 pl-1 pr-2 border-r border-gray-200 dark:border-gray-700">
-          <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <ViewMDLogo className="w-4 h-4 shadow-2xs" />
           <span className="font-bold text-sm tracking-tight text-gray-900 dark:text-gray-100">
             ViewMD
           </span>

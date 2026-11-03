@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { FileText, FolderOpen, AlertTriangle } from 'lucide-react';
+import { FolderOpen, AlertTriangle } from 'lucide-react';
+import { ViewMDLogo } from './components/common/ViewMDLogo';
 import { AppHeader } from './components/layout/AppHeader';
 import { TabBar } from './components/layout/TabBar';
 import { FileTree } from './components/filetree/FileTree';
@@ -64,9 +65,7 @@ export const App: React.FC = () => {
     if (!tab) {
       return (
         <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center select-none bg-gray-50/50 dark:bg-[#0d1117]">
-          <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4 shadow-xs">
-            <FileText className="w-8 h-8" />
-          </div>
+          <ViewMDLogo className="w-16 h-16 mb-4 shadow-lg rounded-[22%]" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
             No File Open
           </h2>
