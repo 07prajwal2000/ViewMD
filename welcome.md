@@ -2,6 +2,8 @@
 
 > **ViewMD** is a fast, bloat-free, 100% client-side Markdown viewer and editor running in your browser with true native performance and zero server dependencies.
 
+![ViewMD Preview](./public/screenshot.png)
+
 ---
 
 ## ⚡ Quick Highlights
