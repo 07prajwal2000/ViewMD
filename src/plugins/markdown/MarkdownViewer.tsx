@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -12,6 +12,8 @@ import type { ViewerProps } from '../../types/plugin';
 import { useTheme } from '../../context/ThemeContext';
 import { useEditorSettings } from '../../context/EditorSettingsContext';
 import { getStoredViewMode, type MarkdownViewMode } from '../../services/storage/settings';
+import { FrontmatterView } from './FrontmatterView';
+import { parseFrontmatter } from './frontmatter';
 
 export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, onSave }) => {
   const { resolvedTheme } = useTheme();
@@ -45,6 +47,11 @@ export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, on
   }, [onSave]);
 
   const rawText = typeof tab.content === 'string' ? tab.content : '';
+
+  const { hasFrontmatter, data, raw, error, body } = useMemo(
+    () => parseFrontmatter(rawText),
+    [rawText]
+  );
 
   const renderEditor = () => (
     <div className="h-full w-full overflow-hidden bg-white dark:bg-[#1e1e1e] flex flex-col">
@@ -90,6 +97,9 @@ export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, on
   const renderPreview = () => (
     <div className="h-full w-full overflow-y-auto bg-white dark:bg-[#0d1117] p-8 transition-colors">
       <div className="max-w-4xl mx-auto">
+        {hasFrontmatter && (
+          <FrontmatterView data={data} raw={raw} error={error} />
+        )}
         <article className="markdown-body" data-theme={resolvedTheme}>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -100,7 +110,7 @@ export const MarkdownViewer: React.FC<ViewerProps> = ({ tab, onContentChange, on
               ),
             }}
           >
-            {rawText || '*No content*'}
+            {body || (hasFrontmatter ? '' : '*No content*')}
           </ReactMarkdown>
         </article>
       </div>

@@ -18,6 +18,36 @@ export async function openDirectoryPicker(): Promise<FileSystemDirectoryHandle |
   }
 }
 
+export async function openFilePicker(): Promise<FileSystemFileHandle[] | null> {
+  if (!('showOpenFilePicker' in window)) {
+    throw new Error('Your browser does not support the File System Access API. Please use Chrome, Edge, or Brave.');
+  }
+
+  try {
+    const handles = await (window as unknown as {
+      showOpenFilePicker: (options?: unknown) => Promise<FileSystemFileHandle[]>;
+    }).showOpenFilePicker({
+      multiple: true,
+      types: [
+        {
+          description: 'Markdown Documents',
+          accept: {
+            'text/markdown': ['.md', '.markdown', '.mdown', '.mkd'],
+            'text/plain': ['.txt'],
+            'application/pdf': ['.pdf'],
+          },
+        },
+      ],
+    });
+    return handles;
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return null; // User cancelled
+    }
+    throw err;
+  }
+}
+
 export async function verifyPermission(
   handle: FileSystemHandle,
   readWrite: boolean = true

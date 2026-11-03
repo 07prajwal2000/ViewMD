@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Folder, ChevronDown, Clock, X, FolderOpen } from 'lucide-react';
+import { Folder, ChevronDown, Clock, X, FolderOpen, FileText } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { useTabs } from '../../context/TabsContext';
 
 export const RecentsDropdown: React.FC = () => {
   const { directoryName, recentWorkspaces, openFolder, openRecentFolder, removeRecent } =
     useWorkspace();
+  const { openFileFromDisk } = useTabs();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +36,22 @@ export const RecentsDropdown: React.FC = () => {
 
       {isOpen && (
         <div className="absolute left-0 mt-1.5 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1.5 z-50 text-xs">
+          {/* Action: Open File */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              openFileFromDisk();
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium transition-colors cursor-pointer border-b border-gray-100 dark:border-gray-700/60"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              <span>Open File...</span>
+            </div>
+            <kbd className="text-[10px] font-mono px-1 py-0.5 rounded bg-blue-100/60 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">Ctrl+O</kbd>
+          </button>
+
           {/* Action: Open Folder */}
           <button
             type="button"

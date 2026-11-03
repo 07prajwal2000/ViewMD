@@ -7,6 +7,7 @@ import {
   readFileAsBlob,
   writeFile,
   resolvePath,
+  openFilePicker,
 } from '../services/fileSystem/fileAccess';
 import {
   getWorkspaceSession,
@@ -38,6 +39,7 @@ interface TabsContextType {
   updateTabContent: (tabId: string, content: string) => void;
   saveTab: (tabId: string) => Promise<boolean>;
   saveActiveFile: (targetPane?: PaneType) => Promise<boolean>;
+  openFileFromDisk: () => Promise<void>;
 }
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
@@ -495,6 +497,27 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [focusedPane, activePrimaryTabId, activeSecondaryTabId, saveTab]
   );
 
+  const openFileFromDisk = useCallback(async () => {
+    try {
+      const handles = await openFilePicker();
+      if (!handles || handles.length === 0) return;
+
+      for (const fileHandle of handles) {
+        const entry: FileEntry = {
+          id: fileHandle.name,
+          name: fileHandle.name,
+          path: fileHandle.name,
+          kind: 'file',
+          handle: fileHandle,
+          fileHandle,
+        };
+        await openFile(entry);
+      }
+    } catch (err) {
+      console.error('Failed to open file from disk:', err);
+    }
+  }, [openFile]);
+
   return (
     <TabsContext.Provider
       value={{
@@ -519,6 +542,7 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateTabContent,
         saveTab,
         saveActiveFile,
+        openFileFromDisk,
       }}
     >
       {children}

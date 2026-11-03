@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { FolderOpen, AlertTriangle } from 'lucide-react';
+import { FolderOpen, AlertTriangle, FileText } from 'lucide-react';
 import { ViewMDLogo } from './components/common/ViewMDLogo';
 import { AppHeader } from './components/layout/AppHeader';
 import { TabBar } from './components/layout/TabBar';
@@ -10,10 +10,12 @@ import { useTabs, type PaneType } from './context/TabsContext';
 import { useWorkspace } from './context/WorkspaceContext';
 import { pluginRegistry } from './plugins';
 import { getStoredSidebarOpen, setStoredSidebarOpen } from './services/storage/settings';
+import { usePwaFileHandling } from './services/pwa/usePwaFileHandling';
 import type { TabItem } from './types/plugin';
 
 export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(getStoredSidebarOpen);
+  const { openFileFromDisk } = usePwaFileHandling();
   const {
     activePrimaryTab,
     activeSecondaryTab,
@@ -73,18 +75,30 @@ export const App: React.FC = () => {
             Select a Markdown or PDF document from the file tree on the left, or open a new directory to begin.
           </p>
 
-          {!currentDirectory && (
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={openFolder}
+              onClick={openFileFromDisk}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
-              <FolderOpen className="w-4 h-4" />
-              <span>Open Local Folder</span>
+              <FileText className="w-4 h-4" />
+              <span>Open File...</span>
             </button>
-          )}
+
+            {!currentDirectory && (
+              <button
+                type="button"
+                onClick={openFolder}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              >
+                <FolderOpen className="w-4 h-4" />
+                <span>Open Folder...</span>
+              </button>
+            )}
+          </div>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] text-gray-400">
+            <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+O</kbd> Open File</span>
             <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+B</kbd> Toggle Sidebar</span>
             <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+P</kbd> Quick Search</span>
             <span><kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-gray-600 dark:text-gray-300">Ctrl+Shift+F</kbd> Find in Files</span>

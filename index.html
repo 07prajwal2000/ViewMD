@@ -2,32 +2,92 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="apple-touch-icon" href="./logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#2563eb" />
 
-    <title>ViewMD - Fast, Clean Markdown Viewer & Editor</title>
+    <!-- Primary Meta Tags -->
+    <title>ViewMD - Fast, 100% Client-Side Markdown Viewer & Editor</title>
+    <meta name="title" content="ViewMD - Fast, 100% Client-Side Markdown Viewer & Editor" />
     <meta
       name="description"
-      content="Fast, bloat-free local Markdown viewer and editor with live preview, tabbed browsing, and direct disk saving."
+      content="Fast, bloat-free, 100% client-side Markdown viewer and editor with live GFM preview, split editor panes, frontmatter inspector, fuzzy workspace search, and direct local disk saving."
     />
+    <meta
+      name="keywords"
+      content="markdown viewer, markdown editor, client-side, local file system, pwa, offline markdown, github flavored markdown, frontmatter inspector, split view editor, web app"
+    />
+    <meta name="author" content="Prajwal" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://07prajwal2000.github.io/ViewMD/" />
 
-    <!-- Open Graph / Meta -->
+    <!-- Favicon & Touch Icons -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+
+    <!-- PWA Web App Manifest & Theme -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="application-name" content="ViewMD" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ViewMD" />
+    <meta name="theme-color" content="#161b22" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="ViewMD - Fast, Clean Markdown Viewer & Editor" />
+    <meta property="og:url" content="https://07prajwal2000.github.io/ViewMD/" />
+    <meta property="og:title" content="ViewMD - Fast, 100% Client-Side Markdown Viewer & Editor" />
     <meta
       property="og:description"
-      content="100% client-side, zero-backend Markdown viewer and editor with local file system access, split view, fuzzy search, and GFM preview."
+      content="Fast, bloat-free, 100% client-side Markdown viewer and editor with live GFM preview, split view, frontmatter inspector, and direct disk saving."
     />
-    <meta property="og:image" content="./screenshot.png" />
+    <meta property="og:image" content="https://07prajwal2000.github.io/ViewMD/og-image.png" />
+    <meta property="og:image:secure_url" content="https://07prajwal2000.github.io/ViewMD/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ViewMD - Modern Markdown Viewer and Editor Preview" />
+    <meta property="og:site_name" content="ViewMD" />
+
+    <!-- Twitter / X Cards -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="ViewMD - Fast, Clean Markdown Viewer & Editor" />
+    <meta name="twitter:url" content="https://07prajwal2000.github.io/ViewMD/" />
+    <meta name="twitter:title" content="ViewMD - Fast, 100% Client-Side Markdown Viewer & Editor" />
     <meta
       name="twitter:description"
-      content="100% client-side, zero-backend Markdown viewer and editor with local file system access, split view, fuzzy search, and GFM preview."
+      content="Fast, bloat-free, 100% client-side Markdown viewer and editor with live GFM preview, split view, frontmatter inspector, and direct disk saving."
     />
-    <meta name="twitter:image" content="./screenshot.png" />
+    <meta name="twitter:image" content="https://07prajwal2000.github.io/ViewMD/og-image.png" />
+    <meta name="twitter:image:alt" content="ViewMD Markdown Editor & Preview Banner" />
+    <meta name="twitter:creator" content="@07prajwal2000" />
+
+    <!-- Structured Data (JSON-LD) for Search Engines -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ViewMD",
+        "url": "https://07prajwal2000.github.io/ViewMD/",
+        "description": "Fast, bloat-free, 100% client-side Markdown viewer and editor running natively in your browser with live preview, tabbed browsing, split pane editing, frontmatter inspector, and direct local disk saving.",
+        "applicationCategory": "ProductivityApplication",
+        "operatingSystem": "Any",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Direct Local Disk Access via modern File System Access API",
+          "PWA with File Handling for .md and markdown file extensions",
+          "Frontmatter Inspector with formatted UI and YAML toggles",
+          "Independent dual-pane split editor groups",
+          "Fuzzy workspace file search (Ctrl+P) and in-file text search (Ctrl+Shift+F)",
+          "100% client-side offline execution"
+        ],
+        "screenshot": "https://07prajwal2000.github.io/ViewMD/screenshot.png"
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

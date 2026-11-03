@@ -70,6 +70,18 @@ Most modern Markdown editors come with significant trade-offs:
 - Drag-and-drop tab reordering.
 - Workspace sessions (open tabs, split states, active tabs) automatically saved to `localStorage` and restored on next launch.
 
+### 🚀 Progressive Web App (PWA) & File Associations
+- **Installable Desktop/Mobile App**: Install directly from Chrome/Edge as a native desktop application.
+- **Default `.md` File Handler**: Uses the modern **W3C File Handling API** (`launchQueue`) to register ViewMD as your system's default viewer/editor for `.md`, `.markdown`, and `.txt` files.
+- **Offline First**: Precached Service Worker allows you to view and edit Markdown completely offline with zero latency.
+- **Direct File Open (`Ctrl+O`)**: Open single or multiple files on disk without having to mount an entire directory.
+
+### 🏷️ Interactive Frontmatter Inspector
+- **Smart Parsing**: Automatically extracts YAML frontmatter and renders a clean metadata card at the top of the preview pane.
+- **Type-Aware Display**: Tag badges, status pills, clickable hyperlinks, date pickers, color swatches, and nested property structures.
+- **Dual View Modes**: Switch effortlessly between the structured interactive table and syntax-highlighted raw YAML.
+- **One-Click Copy & Collapse**: Quick copy button for metadata and collapsible panel for clean distraction-free reading.
+
 ### 📜 Word Wrap & Theme Synchronization
 - **Word Wrap Toggle**: Header button toggles CodeMirror soft line wrapping globally.
 - **Plaintext Buffer Mode**: Dedicated plain text viewer/editor for all non-markdown/non-pdf files, strictly preserving newline breakpoints without formatting artifacts.
@@ -82,6 +94,7 @@ Most modern Markdown editors come with significant trade-offs:
 
 | Shortcut | Action |
 | :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>O</kbd> / <kbd>Cmd</kbd> + <kbd>O</kbd> | Open single or multiple files directly from local disk |
 | <kbd>Ctrl</kbd> + <kbd>S</kbd> / <kbd>Cmd</kbd> + <kbd>S</kbd> | Save active file directly to local disk |
 | <kbd>Ctrl</kbd> + <kbd>B</kbd> / <kbd>Cmd</kbd> + <kbd>B</kbd> | Toggle left file tree sidebar |
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> / <kbd>Cmd</kbd> + <kbd>P</kbd> | Open Fuzzy File Search (Quick Open) |
@@ -137,7 +150,7 @@ ViewMD is built using **[Bun](https://bun.sh/)** for rapid package resolution, b
 ### Setup
 ```bash
 # Clone repository
-git clone https://github.com/username/viewmd.git
+git clone https://github.com/07prajwal2000/ViewMD.git
 cd viewmd
 
 # Install dependencies
