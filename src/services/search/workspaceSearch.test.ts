@@ -127,4 +127,62 @@ describe('workspaceSearch service', () => {
     expect(results[0].file.name).toBe('App.tsx');
     expect(results[0].matches[0].text).toContain('customDynamicToken');
   });
+
+  it('searches inside local project files without fileHandle', async () => {
+    const localFiles: FileEntry[] = [
+      {
+        id: 'notes/local-ideas.md',
+        name: 'local-ideas.md',
+        path: 'notes/local-ideas.md',
+        kind: 'file',
+        isLocal: true,
+        content: '# Ideas\nBrainstorming quantum-algorithms and offline sync.',
+      },
+      {
+        id: 'notes/tasks.md',
+        name: 'tasks.md',
+        path: 'notes/tasks.md',
+        kind: 'file',
+        isLocal: true,
+        content: '# Tasks\n- [ ] Ship ViewMD localstorage release',
+      },
+    ];
+
+    // Search keyword in local file content
+    const results = await searchContentInWorkspace(localFiles, 'quantum-algorithms');
+    expect(results.length).toBe(1);
+    expect(results[0].file.name).toBe('local-ideas.md');
+    expect(results[0].matches[0].line).toBe(2);
+    expect(results[0].matches[0].text).toContain('quantum-algorithms');
+
+    // Fuzzy search file name
+    const fuzzyMatches = searchFilesFuzzy(localFiles, 'ideas');
+    expect(fuzzyMatches.length).toBe(1);
+    expect(fuzzyMatches[0].file.name).toBe('local-ideas.md');
+  });
+
+  it('searches inside in-memory tab content matching by path', async () => {
+    const inMemoryFiles: FileEntry[] = [
+      {
+        id: 'inmemory:Untitled-1.md:173000000000',
+        name: 'Untitled-1.md',
+        path: 'Untitled-1.md',
+        kind: 'file',
+        content: '# Draft\nInitial draft text',
+      },
+    ];
+
+    const openTabsContent = new Map<string, string>();
+    // Open tab mapped by tab.path
+    openTabsContent.set('Untitled-1.md', '# Draft\nUpdated with superSecretKeyword in memory');
+
+    const results = await searchContentInWorkspace(
+      inMemoryFiles,
+      'superSecretKeyword',
+      openTabsContent
+    );
+    expect(results.length).toBe(1);
+    expect(results[0].file.name).toBe('Untitled-1.md');
+    expect(results[0].matches[0].text).toContain('superSecretKeyword');
+  });
 });

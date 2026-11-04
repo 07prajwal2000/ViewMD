@@ -12,6 +12,9 @@ export interface TabItem {
   isPinned?: boolean;
   isMissing?: boolean;
   errorMessage?: string;
+  isLocal?: boolean;
+  isInMemory?: boolean;
+  originUrl?: string;
 }
 
 export interface ViewerProps {

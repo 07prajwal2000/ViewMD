@@ -59,8 +59,8 @@ Most modern Markdown editors come with significant trade-offs:
 - **Preview Only**: Distraction-free rendered Markdown preview using GitHub Markdown styling.
 
 ### 🔍 Fuzzy Workspace Search & Find in Files
-- **Quick Open (`Ctrl+P` / `Cmd+P`)**: Instant fuzzy file search across all filenames and directory paths powered by **Fuse.js**, with match character highlighting.
-- **Find in Files (`Ctrl+Shift+F` / `Cmd+Shift+F`)**: Full-text workspace search across all text documents with real-time indexing of unsaved tabs, line numbers, and preview snippets.
+- **Quick Open (`Ctrl+P` / `Cmd+P`)**: Instant fuzzy file search across all filenames and directory paths powered by **Fuse.js**, with match character highlighting. Seamlessly searches native disk directories, browser-local projects, and unsaved in-memory tabs, complete with visual `Local` and `In-Memory` badges.
+- **Find in Files (`Ctrl+Shift+F` / `Cmd+Shift+F`)**: Full-text workspace keyword search across all documents with real-time indexing of unsaved tabs and in-memory text buffers, line numbers, and preview snippets.
 - Supports Case Sensitivity (`Aa`) and Regular Expressions (`.*`).
 
 ### 📑 Tab Management & Session Persistence
@@ -76,6 +76,18 @@ Most modern Markdown editors come with significant trade-offs:
 - **Offline First**: Precached Service Worker allows you to view and edit Markdown completely offline with zero latency.
 - **Direct File Open (`Ctrl+O`)**: Open single or multiple files on disk without having to mount an entire directory.
 
+### 🌐 Load Markdown from URL (`?url=<url>`)
+- **Direct Query Parameter**: Open any publicly accessible Markdown or presentation deck by simply appending `?url=https://raw.githubusercontent.com/.../README.md` or relative paths like `?url=/presentation.mdp`.
+- **Open from URL Dialog**: Convenient in-app modal to load remote or sample documents into memory with a single click.
+- **Auto-Routing**: Automatically opens `.mdp` / `.deck` files in the Keynote Presentation viewer and `.md` files in the Markdown viewer.
+
+### 💾 In-Memory Files & LocalStorage Projects (Zero-FS Mode)
+- **No Native File System Required**: Use ViewMD seamlessly on any browser or device (including Safari, Firefox, iOS, and Android) without requiring the File System Access API.
+- **Fast In-Memory Creation**: Click **New File** or **New Project** to create documents instantly in memory.
+- **LocalStorage Persistence**: On save, documents are stored securely in your browser's `localStorage` as a project.
+- **Recent Workspaces**: LocalStorage projects are listed alongside native disk workspaces with one-click access and full workspace session recovery.
+- **Full File Tree Operations**: Create nested subfolders, rename, delete, and use fuzzy file search (`Ctrl+P`) and full-text search (`Ctrl+Shift+F`) on local project documents.
+
 ### 🎭 Markdown Presentation Engine (`.mdp` & `.deck`)
 - **Keynote Slide Decks from Plain Markdown**: Author slides separated by `---` (3-dashes) with live split preview.
 - **Minimalist & Stylish Themes**: Curated palettes and coordinated typography—**Midnight**, **Tokyo Night**, **Mocha**, **Paper**, **Daylight**, and **Obsidian**.
@@ -84,13 +96,16 @@ Most modern Markdown editors come with significant trade-offs:
   - `![Diagram](url "left")` &rarr; 50/50 left-column layout.
   - `![Hero](url "bg opacity:0.3")` &rarr; Full-bleed slide background with custom opacity overlay.
 - **Interactive Slides**: Native execution of HTML5 `<canvas>` animations, vector animated SVGs, video, and custom interactive widgets with automatic memory cleanup.
-- **Presenter Controls**:
-  - Fullscreen Presentation Mode (`F`).
-  - Arrow navigation (`→` / `←` / `Space` / `Backspace` / `Home` / `End`).
-  - Slide Overview Grid (`O` / `Esc`) with fuzzy search to jump to any slide thumbnail.
-  - Speaker Notes drawer (`<!-- note: ... -->`).
-  - Auto-hiding floating presenter HUD and bottom progress bar.
-- **Instant PDF Export**: Dedicated vector 16:9 print engine (`window.print()`) for offline keynote presentations and opening in ViewMD's built-in PDF viewer.
+- **Presenter Controls & Interactive Tools**:
+  - **Glowing Laser Pointer (`L`)**: Trailing neon laser dot that smoothly follows your cursor and auto-fades after 1 second of inactivity.
+  - **Slide Pen Annotation (`P`)**: Draw directly on top of slides with customizable brush colors and widths. Includes per-slide undo/redo stack (`Ctrl+Z`, `Ctrl+Y`) and undoable clear.
+  - **Slide Whiteboard (`W`)**: Toggle full-screen freeform whiteboard canvas powered by **tldraw**, persisting state in memory per slide.
+  - **Slide Overview Grid (`O` / `Esc`)**: Visual thumbnail grid with fuzzy filtering to jump to any slide instantly.
+  - **Fullscreen Mode (`F`)**: Distraction-free presentation viewport automatically scaling to 16:9, 16:10, or 4:3.
+  - **Typography & Scale Controls**: Global and per-slide font scaling (75% to 150%) to prevent content overflow on dense slides.
+  - **Speaker Notes**: Dedicated presenter notes drawer (`<!-- note: ... -->`).
+  - **In-App MDP Reference Guide**: Full interactive docs modal (`?` key or header Docs button).
+- **Instant PDF Export**: Dedicated vector 16:9 print engine (`window.print()`) for offline keynote presentations and opening in ViewMD's built-in PDF viewer with zero watermarks.
 - **One-Click Presentation Mode for `.md`**: Present any standard Markdown document as a slide deck with a single click in the header toolbar.
 
 ### 🏷️ Interactive Frontmatter Inspector
@@ -112,17 +127,23 @@ Most modern Markdown editors come with significant trade-offs:
 | Shortcut | Action |
 | :--- | :--- |
 | <kbd>Ctrl</kbd> + <kbd>O</kbd> / <kbd>Cmd</kbd> + <kbd>O</kbd> | Open single or multiple files directly from local disk |
-| <kbd>Ctrl</kbd> + <kbd>S</kbd> / <kbd>Cmd</kbd> + <kbd>S</kbd> | Save active file directly to local disk |
+| <kbd>Ctrl</kbd> + <kbd>S</kbd> / <kbd>Cmd</kbd> + <kbd>S</kbd> | Save active file directly to local disk or LocalStorage project |
 | <kbd>Ctrl</kbd> + <kbd>B</kbd> / <kbd>Cmd</kbd> + <kbd>B</kbd> | Toggle left file tree sidebar |
-| <kbd>Ctrl</kbd> + <kbd>P</kbd> / <kbd>Cmd</kbd> + <kbd>P</kbd> | Open Fuzzy File Search (Quick Open) |
-| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | Open Find in Files (Content Search) |
+| <kbd>Ctrl</kbd> + <kbd>P</kbd> / <kbd>Cmd</kbd> + <kbd>P</kbd> | Open Fuzzy File Search (Quick Open) across disk, local, and in-memory files |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | Open Find in Files (Content Search) across all documents and open buffers |
 | <kbd>Ctrl</kbd> + <kbd>Enter</kbd> | In search modal: Open file in split side pane |
 | <kbd>F</kbd> | In slide deck: Toggle Fullscreen Presentation Mode |
+| <kbd>L</kbd> | In slide deck: Toggle glowing trailing Laser Pointer |
+| <kbd>P</kbd> | In slide deck: Toggle persistent Slide Pen annotation tool |
+| <kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Cmd</kbd> + <kbd>Z</kbd> | In slide pen mode: Undo stroke on current slide |
+| <kbd>Ctrl</kbd> + <kbd>Y</kbd> / <kbd>Cmd</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> | In slide pen mode: Redo stroke on current slide |
+| <kbd>W</kbd> | In slide deck: Toggle full Whiteboard canvas (powered by tldraw) |
 | <kbd>O</kbd> | In slide deck: Open Slide Overview Thumbnail Grid |
+| <kbd>?</kbd> | In slide deck: Open MDP Syntax & Feature Guide |
 | <kbd>→</kbd> / <kbd>Space</kbd> | In slide deck: Next slide |
 | <kbd>←</kbd> / <kbd>Backspace</kbd> | In slide deck: Previous slide |
 | <kbd>Middle Click</kbd> | Close tab |
-| <kbd>Esc</kbd> | Dismiss modals and context menus |
+| <kbd>Esc</kbd> | Dismiss modals, pen tool, whiteboard, or exit overview |
 
 ---
 

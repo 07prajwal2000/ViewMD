@@ -13,6 +13,10 @@ import {
   getWorkspaceSession,
   saveWorkspaceSession,
 } from '../services/storage/workspaceSessions';
+import {
+  findOrCreateLocalProjectByName,
+  saveFileToLocalProject,
+} from '../services/storage/localProjects';
 import { useWorkspace } from './WorkspaceContext';
 
 export type PaneType = 'primary' | 'secondary';
@@ -43,12 +47,22 @@ interface TabsContextType {
   saveActiveFile: (targetPane?: PaneType) => Promise<boolean>;
   openFileFromDisk: () => Promise<void>;
   setTabPluginId: (tabId: string, pluginId: string) => void;
+  createNewInMemoryFile: (fileName?: string, initialContent?: string, originUrl?: string) => TabItem;
+  loadFromUrl: (url: string) => Promise<boolean>;
 }
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentDirectory, directoryName } = useWorkspace();
+  const {
+    currentDirectory,
+    currentLocalProject,
+    isLocalWorkspace,
+    directoryName,
+    updateLocalFileContent,
+    getLocalFileContent,
+    setLocalProjectDirectly,
+  } = useWorkspace();
 
   const [primaryTabs, setPrimaryTabs] = useState<TabItem[]>([]);
   const [secondaryTabs, setSecondaryTabs] = useState<TabItem[]>([]);
@@ -63,14 +77,10 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const activeSecondaryTab = secondaryTabs.find((t) => t.id === activeSecondaryTabId);
   const activeTab = focusedPane === 'secondary' && isSplitView ? activeSecondaryTab || activePrimaryTab : activePrimaryTab;
 
-  // Restore workspace session when currentDirectory changes
+  // Restore workspace session when workspace changes
   useEffect(() => {
-    if (!currentDirectory || !directoryName) {
-      setPrimaryTabs([]);
-      setSecondaryTabs([]);
-      setActivePrimaryTabId(null);
-      setActiveSecondaryTabId(null);
-      setIsSplitView(false);
+    if (!directoryName) {
+      // Standalone in-memory tabs persist if already open
       return;
     }
 
@@ -93,8 +103,48 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const loadTabsFromPaths = async (paths: string[]): Promise<TabItem[]> => {
         const loaded: TabItem[] = [];
+
         for (const filePath of paths) {
           const isPinned = session.pinnedPaths ? session.pinnedPaths.includes(filePath) : false;
+
+          // 1. Local workspace restore
+          if (isLocalWorkspace && currentLocalProject) {
+            const fileRec = currentLocalProject.files[filePath];
+            const fileName = filePath.split('/').pop() || filePath;
+            const plugin = pluginRegistry.getForFile(fileName);
+
+            if (fileRec) {
+              loaded.push({
+                id: filePath,
+                name: fileName,
+                path: filePath,
+                fileHandle: null,
+                content: fileRec.content,
+                isDirty: false,
+                pluginId: plugin.id,
+                isPinned,
+                isLocal: true,
+              });
+            } else {
+              loaded.push({
+                id: filePath,
+                name: fileName,
+                path: filePath,
+                fileHandle: null,
+                content: '',
+                isDirty: false,
+                pluginId: plugin.id,
+                isPinned,
+                isMissing: true,
+                errorMessage: `File "${filePath}" could not be found in this local project.`,
+              });
+            }
+            continue;
+          }
+
+          // 2. Native workspace restore
+          if (!currentDirectory) continue;
+
           const resolved = await resolvePath(currentDirectory, filePath);
 
           if (!resolved || !resolved.fileHandle) {
@@ -189,7 +239,7 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     restoreSession();
-  }, [currentDirectory, directoryName]);
+  }, [currentDirectory, currentLocalProject, directoryName, isLocalWorkspace]);
 
   // Save session when tabs or layout change
   useEffect(() => {
@@ -219,7 +269,7 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const openFile = useCallback(
     async (entry: FileEntry, targetPane?: PaneType) => {
-      if (entry.kind !== 'file' || !entry.fileHandle) return;
+      if (entry.kind !== 'file') return;
 
       const pane = targetPane || (isSplitView ? focusedPane : 'primary');
       const tabs = pane === 'primary' ? primaryTabs : secondaryTabs;
@@ -244,21 +294,28 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (inOtherPane) {
           content = inOtherPane.content;
-        } else if (plugin.id === 'pdf') {
-          content = await readFileAsBlob(entry.fileHandle);
-        } else {
-          content = await readFileAsText(entry.fileHandle);
+        } else if (entry.isLocal) {
+          content = getLocalFileContent(entry.path) ?? entry.content ?? '';
+        } else if (entry.fileHandle) {
+          if (plugin.id === 'pdf') {
+            content = await readFileAsBlob(entry.fileHandle);
+          } else {
+            content = await readFileAsText(entry.fileHandle);
+          }
+        } else if (entry.content !== undefined) {
+          content = entry.content;
         }
 
         const newTab: TabItem = {
           id: entry.id,
           name: entry.name,
           path: entry.path,
-          fileHandle: entry.fileHandle,
+          fileHandle: entry.fileHandle || null,
           content,
           isDirty: inOtherPane ? inOtherPane.isDirty : false,
           pluginId: plugin.id,
           isPinned: false,
+          isLocal: entry.isLocal,
         };
 
         setTabs((prev) => [...prev, newTab]);
@@ -269,7 +326,89 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         alert('Failed to read file: ' + (err instanceof Error ? err.message : String(err)));
       }
     },
-    [primaryTabs, secondaryTabs, focusedPane, isSplitView]
+    [primaryTabs, secondaryTabs, focusedPane, isSplitView, getLocalFileContent]
+  );
+
+  const createNewInMemoryFile = useCallback(
+    (customName?: string, initialContent?: string, originUrl?: string): TabItem => {
+      let name = customName?.trim();
+      if (!name) {
+        const allTabs = [...primaryTabs, ...secondaryTabs];
+        let counter = 1;
+        while (allTabs.some((t) => t.name.toLowerCase() === `untitled-${counter}.md`)) {
+          counter++;
+        }
+        name = `Untitled-${counter}.md`;
+      }
+
+      const plugin = pluginRegistry.getForFile(name);
+      const content = initialContent ?? `# ${name.replace(/\.[^/.]+$/, '')}\n\n`;
+      const tabId = `inmemory:${name}:${Date.now()}`;
+
+      const newTab: TabItem = {
+        id: tabId,
+        name,
+        path: name,
+        fileHandle: null,
+        content,
+        isDirty: false,
+        pluginId: plugin.id,
+        isPinned: false,
+        isInMemory: true,
+        originUrl,
+      };
+
+      setPrimaryTabs((prev) => [...prev, newTab]);
+      setActivePrimaryTabId(newTab.id);
+      setFocusedPane('primary');
+
+      return newTab;
+    },
+    [primaryTabs, secondaryTabs]
+  );
+
+  const loadFromUrl = useCallback(
+    async (rawUrl: string): Promise<boolean> => {
+      try {
+        const trimmed = rawUrl.trim();
+        if (!trimmed) return false;
+
+        const resolved = new URL(trimmed, window.location.href).href;
+
+        const res = await fetch(resolved);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        const text = await res.text();
+
+        let fileName = 'document.md';
+        try {
+          const u = new URL(resolved);
+          const parts = u.pathname.split('/').filter(Boolean);
+          if (parts.length > 0) {
+            fileName = decodeURIComponent(parts[parts.length - 1]);
+          }
+        } catch {
+          const parts = trimmed.split('?')[0].split('/').filter(Boolean);
+          if (parts.length > 0) {
+            fileName = decodeURIComponent(parts[parts.length - 1]);
+          }
+        }
+        if (!fileName.includes('.')) {
+          fileName += '.md';
+        }
+
+        createNewInMemoryFile(fileName, text, resolved);
+        return true;
+      } catch (err) {
+        console.error('Failed to load file from URL:', err);
+        alert(
+          `Failed to load file from URL (${rawUrl}):\n${err instanceof Error ? err.message : String(err)}\n\nPlease ensure the URL is accessible and allows cross-origin requests (CORS).`
+        );
+        return false;
+      }
+    },
+    [createNewInMemoryFile]
   );
 
   const closeTab = useCallback(
@@ -294,7 +433,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const nextTabs = tabs.filter((t) => t.id !== tabId);
       setTabs(nextTabs);
 
-      // Adjust active tab in this pane
       if (activeId === tabId) {
         if (nextTabs.length === 0) {
           setActiveId(null);
@@ -305,7 +443,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // If secondary pane closed its last tab, close split view automatically
       if (!isPrimary && nextTabs.length === 0) {
         setIsSplitView(false);
         setActiveSecondaryTabId(null);
@@ -365,7 +502,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTabs([]);
       setActiveId(null);
 
-      // If secondary pane closed all its tabs, close split view automatically
       if (!isPrimary) {
         setIsSplitView(false);
         setActiveSecondaryTabId(null);
@@ -422,7 +558,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setIsSplitView(true);
 
-      // Check if already in target
       if (!targetTabs.some((t) => t.id === tabId)) {
         setTargetTabs((prev) => [...prev, { ...tab }]);
       }
@@ -449,7 +584,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsSplitView(true);
       }
 
-      // Remove from source
       setSourceTabs((prev) => {
         const next = prev.filter((t) => t.id !== tabId);
         const activeId = fromPane === 'primary' ? activePrimaryTabId : activeSecondaryTabId;
@@ -460,7 +594,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSourceActive(next[0].id);
           }
         }
-        // If moving out of secondary and it is now empty, close split view
         if (fromPane === 'secondary' && next.length === 0) {
           setIsSplitView(false);
           setActiveSecondaryTabId(null);
@@ -468,7 +601,6 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return next;
       });
 
-      // Add to target if not exists
       setTargetTabs((prev) => {
         if (prev.some((t) => t.id === tabId)) return prev;
         return [...prev, tab];
@@ -484,24 +616,20 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSplitView((prev) => {
       const next = !prev;
       if (next) {
-        // Opening split view:
         if (secondaryTabs.length === 0) {
           if (primaryTabs.length > 1) {
-            // Move non-active tab or clone active tab to secondary
             const otherTab = primaryTabs.find((t) => t.id !== activePrimaryTabId) || primaryTabs[0];
             if (otherTab) {
               setSecondaryTabs([{ ...otherTab }]);
               setActiveSecondaryTabId(otherTab.id);
             }
           } else if (activePrimaryTab) {
-            // Clone the active tab into secondary pane
             setSecondaryTabs([{ ...activePrimaryTab }]);
             setActiveSecondaryTabId(activePrimaryTab.id);
           }
         }
         setFocusedPane('secondary');
       } else {
-        // Closing split view: merge secondary tabs back into primary tabs
         setPrimaryTabs((prev) => {
           const merged = [...prev];
           for (const sTab of secondaryTabs) {
@@ -531,15 +659,57 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async (tabId: string): Promise<boolean> => {
       const allTabs = [...primaryTabs, ...secondaryTabs];
       const tab = allTabs.find((t) => t.id === tabId);
-      if (!tab || !tab.fileHandle || !tab.isDirty) return false;
+      if (!tab) return false;
+
+      // Allow saving even if not marked dirty yet for in-memory files
+      if (!tab.isDirty && tab.fileHandle) return true;
 
       try {
-        await writeFile(tab.fileHandle, tab.content);
-        const clearDirty = (prev: TabItem[]) =>
-          prev.map((t) => (t.id === tabId ? { ...t, isDirty: false } : t));
+        // 1. Native disk file
+        if (tab.fileHandle) {
+          await writeFile(tab.fileHandle, tab.content);
+          const clearDirty = (prev: TabItem[]) =>
+            prev.map((t) => (t.id === tabId ? { ...t, isDirty: false } : t));
+          setPrimaryTabs(clearDirty);
+          setSecondaryTabs(clearDirty);
+          return true;
+        }
 
-        setPrimaryTabs(clearDirty);
-        setSecondaryTabs(clearDirty);
+        // 2. Existing local workspace file
+        if (tab.isLocal || isLocalWorkspace) {
+          updateLocalFileContent(tab.path, String(tab.content));
+          const clearDirty = (prev: TabItem[]) =>
+            prev.map((t) => (t.id === tabId ? { ...t, isDirty: false, isLocal: true } : t));
+          setPrimaryTabs(clearDirty);
+          setSecondaryTabs(clearDirty);
+          return true;
+        }
+
+        // 3. In-memory file without a project -> save as LocalStorage project
+        const defaultProjectName = 'LocalStorage Project';
+        const projectName =
+          window.prompt('Save to LocalStorage Project name:', defaultProjectName)?.trim() ||
+          defaultProjectName;
+
+        const project = findOrCreateLocalProjectByName(projectName);
+        saveFileToLocalProject(project.id, tab.name, String(tab.content));
+        setLocalProjectDirectly(project);
+
+        const markSaved = (prev: TabItem[]) =>
+          prev.map((t) =>
+            t.id === tabId
+              ? {
+                  ...t,
+                  id: tab.name,
+                  path: tab.name,
+                  isLocal: true,
+                  isInMemory: false,
+                  isDirty: false,
+                }
+              : t
+          );
+        setPrimaryTabs(markSaved);
+        setSecondaryTabs(markSaved);
         return true;
       } catch (err) {
         console.error('Failed to save file:', err);
@@ -547,7 +717,13 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
     },
-    [primaryTabs, secondaryTabs]
+    [
+      primaryTabs,
+      secondaryTabs,
+      isLocalWorkspace,
+      updateLocalFileContent,
+      setLocalProjectDirectly,
+    ]
   );
 
   const saveActiveFile = useCallback(
@@ -616,6 +792,8 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveActiveFile,
         openFileFromDisk,
         setTabPluginId,
+        createNewInMemoryFile,
+        loadFromUrl,
       }}
     >
       {children}

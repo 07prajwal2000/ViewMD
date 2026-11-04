@@ -128,8 +128,8 @@ const ContentLineSnippet: React.FC<{
 
 export const WorkspaceSearchModal: React.FC = () => {
   const { isOpen, mode, query, setQuery, closeSearch, openSearch } = useSearch();
-  const { fileTree, currentDirectory, openFolder } = useWorkspace();
-  const { openFile, primaryTabs, secondaryTabs } = useTabs();
+  const { fileTree, currentDirectory, isLocalWorkspace, openFolder, createLocalProject } = useWorkspace();
+  const { openFile, primaryTabs, secondaryTabs, setActiveTabId, isSplitView, focusedPane } = useTabs();
 
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -140,10 +140,29 @@ export const WorkspaceSearchModal: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Flatten all files in current file tree
+  // Flatten all files in current file tree + include open in-memory/unsaved tabs
   const allFiles = useMemo(() => {
-    return flattenFileTree(fileTree);
-  }, [fileTree]);
+    const treeFiles = flattenFileTree(fileTree);
+    const seen = new Set(treeFiles.map((f) => f.path.toLowerCase()));
+
+    const extraFiles: FileEntry[] = [];
+    for (const tab of [...primaryTabs, ...secondaryTabs]) {
+      const lower = tab.path.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        extraFiles.push({
+          id: tab.id,
+          name: tab.name,
+          path: tab.path,
+          kind: 'file',
+          content: typeof tab.content === 'string' ? tab.content : undefined,
+          isLocal: tab.isLocal,
+        });
+      }
+    }
+
+    return [...treeFiles, ...extraFiles];
+  }, [fileTree, primaryTabs, secondaryTabs]);
 
   // Fuzzy file search results
   const fileResults = useMemo<FuzzyFileMatch[]>(() => {
@@ -157,6 +176,7 @@ export const WorkspaceSearchModal: React.FC = () => {
     for (const tab of [...primaryTabs, ...secondaryTabs]) {
       if (typeof tab.content === 'string') {
         map.set(tab.id, tab.content);
+        map.set(tab.path, tab.content);
       }
     }
     return map;
@@ -234,10 +254,22 @@ export const WorkspaceSearchModal: React.FC = () => {
 
   const handleSelectFile = useCallback(
     (file: FileEntry, targetPane?: 'primary' | 'secondary') => {
+      const pane = targetPane || (isSplitView ? focusedPane : 'primary');
+
+      // Check if already open in tabs
+      const openTab = [...primaryTabs, ...secondaryTabs].find(
+        (t) => t.id === file.id || t.path === file.path
+      );
+      if (openTab) {
+        setActiveTabId(openTab.id, pane);
+        closeSearch();
+        return;
+      }
+
       openFile(file, targetPane);
       closeSearch();
     },
-    [openFile, closeSearch]
+    [primaryTabs, secondaryTabs, isSplitView, focusedPane, setActiveTabId, openFile, closeSearch]
   );
 
   // Keyboard navigation inside modal
@@ -382,25 +414,37 @@ export const WorkspaceSearchModal: React.FC = () => {
 
         {/* Results List */}
         <div ref={listRef} className="flex-1 overflow-y-auto min-h-[160px] max-h-[50vh] p-1.5">
-          {!currentDirectory ? (
+          {!currentDirectory && !isLocalWorkspace && allFiles.length === 0 ? (
             <div className="py-10 flex flex-col items-center justify-center text-center px-4">
               <FolderOpen className="w-8 h-8 text-gray-400 mb-2" />
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                No workspace folder open
+                No workspace or files open
               </p>
               <p className="text-xs text-gray-400 mb-4">
-                Open a local directory to search files and contents.
+                Open a local directory, create a local project, or create a file to search.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  closeSearch();
-                  openFolder();
-                }}
-                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
-              >
-                Open Folder
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeSearch();
+                    createLocalProject();
+                  }}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
+                >
+                  New Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeSearch();
+                    openFolder();
+                  }}
+                  className="px-3 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
+                >
+                  Open Folder
+                </button>
+              </div>
             </div>
           ) : mode === 'files' ? (
             /* Files Fuzzy Search List */
@@ -429,12 +473,22 @@ export const WorkspaceSearchModal: React.FC = () => {
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {getFileIcon(result.file.name)}
                       <div className="flex flex-col min-w-0">
-                        <div className="truncate">
+                        <div className="truncate flex items-center gap-1.5">
                           <FuzzyHighlight
                             text={result.file.name}
                             indices={nameMatches}
                             className="font-medium text-gray-900 dark:text-gray-100"
                           />
+                          {result.file.isLocal && (
+                            <span className="text-[9px] px-1 py-0.2 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded font-medium">
+                              Local
+                            </span>
+                          )}
+                          {!result.file.isLocal && !result.file.fileHandle && (
+                            <span className="text-[9px] px-1 py-0.2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded font-medium">
+                              In-Memory
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-gray-400 dark:text-gray-500 truncate">
                           <FuzzyHighlight

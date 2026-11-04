@@ -28,6 +28,7 @@ export async function saveRecentWorkspace(handle: FileSystemDirectoryHandle): Pr
         name: handle.name,
         handle,
         lastOpened: now,
+        isLocal: false,
       },
       ...filtered,
     ].slice(0, 10); // Keep max 10 recents
@@ -40,10 +41,37 @@ export async function saveRecentWorkspace(handle: FileSystemDirectoryHandle): Pr
   }
 }
 
-export async function removeRecentWorkspace(name: string): Promise<RecentWorkspace[]> {
+export async function saveRecentLocalWorkspace(id: string, name: string): Promise<RecentWorkspace[]> {
   try {
     const existing = await getRecentWorkspaces();
-    const updated = existing.filter((item) => item.name !== name);
+    const now = Date.now();
+
+    // Filter out previous entry with same id or name if any
+    const filtered = existing.filter((item) => item.id !== id && item.name !== name);
+
+    const updated: RecentWorkspace[] = [
+      {
+        id,
+        name,
+        handle: null,
+        lastOpened: now,
+        isLocal: true,
+      },
+      ...filtered,
+    ].slice(0, 10); // Keep max 10 recents
+
+    await set(RECENTS_KEY, updated);
+    return updated;
+  } catch (err) {
+    console.error('Failed to save recent local workspace to IndexedDB:', err);
+    return [];
+  }
+}
+
+export async function removeRecentWorkspace(idOrName: string): Promise<RecentWorkspace[]> {
+  try {
+    const existing = await getRecentWorkspaces();
+    const updated = existing.filter((item) => item.id !== idOrName && item.name !== idOrName);
     await set(RECENTS_KEY, updated);
     return updated;
   } catch (err) {

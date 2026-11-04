@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { FolderOpen, AlertTriangle, FileText } from 'lucide-react';
+import { FolderOpen, AlertTriangle, FileText, FilePlus, FolderPlus, Globe } from 'lucide-react';
 import { ViewMDLogo } from './components/common/ViewMDLogo';
 import { AppHeader } from './components/layout/AppHeader';
 import { TabBar } from './components/layout/TabBar';
 import { FileTree } from './components/filetree/FileTree';
 import { WorkspaceSearchModal } from './components/search/WorkspaceSearchModal';
+import { OpenUrlModal } from './components/common/OpenUrlModal';
 import { useTabs, type PaneType } from './context/TabsContext';
 import { useWorkspace } from './context/WorkspaceContext';
 import { pluginRegistry } from './plugins';
@@ -15,6 +16,7 @@ import type { TabItem } from './types/plugin';
 
 export const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(getStoredSidebarOpen);
+  const [isUrlModalOpen, setIsUrlModalOpen] = useState<boolean>(false);
   const { openFileFromDisk } = usePwaFileHandling();
   const {
     activePrimaryTab,
@@ -25,8 +27,28 @@ export const App: React.FC = () => {
     closeTab,
     moveTabToPane,
     setFocusedPane,
+    createNewInMemoryFile,
+    loadFromUrl,
   } = useTabs();
-  const { currentDirectory, openFolder } = useWorkspace();
+  const { currentDirectory, isLocalWorkspace, openFolder, createLocalProject } = useWorkspace();
+
+  const urlProcessedRef = useRef(false);
+
+  // Check ?url=<url> query parameter on application load
+  useEffect(() => {
+    if (urlProcessedRef.current) return;
+    urlProcessedRef.current = true;
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlParam = params.get('url');
+      if (urlParam) {
+        loadFromUrl(urlParam);
+      }
+    } catch (e) {
+      console.error('Failed to parse URL query param:', e);
+    }
+  }, [loadFromUrl]);
 
   const handlePaneDrop = (e: React.DragEvent, targetPane: PaneType) => {
     e.preventDefault();
@@ -66,30 +88,57 @@ export const App: React.FC = () => {
   const renderViewer = (tab: TabItem | undefined, pane: PaneType) => {
     if (!tab) {
       return (
-        <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center select-none bg-gray-50/50 dark:bg-[#0d1117]">
+        <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center select-none bg-gray-50/50 dark:bg-[#0d1117] overflow-y-auto">
           <ViewMDLogo className="w-16 h-16 mb-4 shadow-lg rounded-[22%]" />
-          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
             No File Open
           </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mb-6">
-            Select a Markdown or PDF document from the file tree on the left, or open a new directory to begin.
+          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mb-6 leading-relaxed">
+            Create an in-memory document or project, load Markdown directly from a URL, or open files from disk.
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-lg">
+            <button
+              type="button"
+              onClick={() => createNewInMemoryFile()}
+              className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <FilePlus className="w-4 h-4" />
+              <span>New File</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => createLocalProject()}
+              className="flex items-center gap-2 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <FolderPlus className="w-4 h-4" />
+              <span>New Project</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsUrlModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Open URL...</span>
+            </button>
+
             <button
               type="button"
               onClick={openFileFromDisk}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <FileText className="w-4 h-4" />
               <span>Open File...</span>
             </button>
 
-            {!currentDirectory && (
+            {!currentDirectory && !isLocalWorkspace && (
               <button
                 type="button"
                 onClick={openFolder}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 <FolderOpen className="w-4 h-4" />
                 <span>Open Folder...</span>
@@ -242,6 +291,12 @@ export const App: React.FC = () => {
 
       {/* Global Workspace Fuzzy Search & Quick Open Modal */}
       <WorkspaceSearchModal />
+
+      {/* Open from URL Modal */}
+      <OpenUrlModal
+        isOpen={isUrlModalOpen}
+        onClose={() => setIsUrlModalOpen(false)}
+      />
     </div>
   );
 };

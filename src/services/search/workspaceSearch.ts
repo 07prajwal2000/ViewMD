@@ -176,22 +176,31 @@ export async function searchContentInWorkspace(
 
   for (const file of files) {
     if (totalMatches >= maxResults) break;
-    if (!file.fileHandle || !isSearchableTextFile(file.name)) continue;
+    if ((!file.fileHandle && !file.isLocal && file.content === undefined) || !isSearchableTextFile(file.name)) continue;
 
     let content: string | undefined;
 
-    // 1. Check if the file is currently open with unsaved changes
-    if (openTabsContent && openTabsContent.has(file.id)) {
-      content = openTabsContent.get(file.id);
+    // 1. Check if the file is currently open with unsaved changes in tabs
+    if (openTabsContent) {
+      if (openTabsContent.has(file.id)) {
+        content = openTabsContent.get(file.id);
+      } else if (openTabsContent.has(file.path)) {
+        content = openTabsContent.get(file.path);
+      }
     }
 
-    // 2. Check in-memory cache
+    // 2. Direct file in-memory content (local project or in-memory file)
+    if (content === undefined && file.content !== undefined) {
+      content = file.content;
+    }
+
+    // 3. In-memory cache for native files
     if (content === undefined && fileContentCache.has(file.id)) {
       content = fileContentCache.get(file.id);
     }
 
-    // 3. Read from disk if not yet cached
-    if (content === undefined) {
+    // 4. Read from disk if file handle exists
+    if (content === undefined && file.fileHandle) {
       try {
         content = await readFileAsText(file.fileHandle);
         fileContentCache.set(file.id, content);
