@@ -37,6 +37,12 @@ describe('urlLoader utilities', () => {
   it('extracts filename from standard github raw URLs', () => {
     const url = 'https://raw.githubusercontent.com/user/repo/main/docs/guide.md';
     expect(extractFileNameFromUrl(url)).toBe('guide.md');
+
+    const sample1 = 'https://raw.githubusercontent.com/07prajwal2000/ViewMD/refs/heads/main/samples/sample1.md';
+    expect(extractFileNameFromUrl(sample1)).toBe('sample1.md');
+
+    const sample2 = 'https://raw.githubusercontent.com/07prajwal2000/ViewMD/refs/heads/main/samples/sample2.mdp';
+    expect(extractFileNameFromUrl(sample2)).toBe('sample2.mdp');
   });
 
   it('extracts presentation.mdp and ignores query params', () => {

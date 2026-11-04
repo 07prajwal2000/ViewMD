@@ -1,0 +1,147 @@
+---
+title: Interactive Keynote Showcase
+theme: tokyo-night
+aspectRatio: 16:9
+author: Prajwal
+date: 2026-11-04
+---
+
+# Interactive Keynote Engine 🎭
+
+### Fast, Minimalist Slide Decks from Plain Markdown in ViewMD
+
+- **Native `.mdp` & `.deck` Engine**: Keynote aesthetics with zero compilation
+- **6 Keynote Color Themes**: Midnight, Tokyo Night, Mocha, Paper, Daylight, Obsidian
+- **Presenter Tools**: Laser Pointer (<kbd>L</kbd>), Slide Pen (<kbd>P</kbd>), Whiteboard (<kbd>W</kbd>)
+- **16:9 PDF Export**: Instant print engine with no watermarks
+
+<!-- note: Welcome to sample2.mdp! Use arrow keys to navigate slides. -->
+
+---
+
+# Split Layout: Right Directive
+
+![Modern Workspace](https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1600&auto=format&fit=crop "right")
+
+### Effortless 50/50 Multi-Column Media
+
+Using `![Alt](url "right")`, ViewMD automatically transforms your slide into a balanced 2-column keynote layout:
+
+- **Left Column**: Markdown content, headings, checklists, and code snippets
+- **Right Column**: Edge-to-edge media fitting with high visual contrast
+- **Responsive Resizing**: Scales seamlessly to any screen resolution
+
+<!-- note: Explain the 'right' directive syntax and layout behavior. -->
+
+---
+
+# Split Layout: Left Directive
+
+![Neon Cyber City](https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=1600&auto=format&fit=crop "left")
+
+### Inverted Visual Balance
+
+Using `![Alt](url "left")`, media anchors to the left column:
+
+- Natural for step-by-step walkthroughs, diagram references, and code walk-throughs
+- Fluid responsive typography
+- Fully compatible with CodeMirror inline code blocks
+
+---
+
+# Full-Bleed Background Directive
+
+![Starlit Mountain Peak](https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&auto=format&fit=crop "bg opacity:0.25")
+
+## Hero Slides with Custom Opacity
+
+- Use `![Alt](url "bg opacity:0.25")` to set a cinematic fullscreen slide backdrop
+- Text readability is preserved with automated contrast blending
+- Opacity modifier ranges from `0.05` to `0.9`
+
+---
+
+# Live HTML5 Interactive Canvas 🌌
+
+<div id="particle-canvas-container" style="width: 100%; height: 380px; position: relative; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+  <canvas id="particle-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+  <div style="position: absolute; bottom: 12px; left: 16px; font-size: 13px; color: #7aa2f7; font-family: monospace;">
+    Interactive Constellation Nodes: move mouse over canvas
+  </div>
+</div>
+
+<script>
+(function() {
+  const canvas = document.getElementById('particle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = canvas.parentElement.clientWidth;
+  canvas.height = canvas.parentElement.clientHeight;
+  
+  const particles = Array.from({ length: 35 }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 1.2,
+    vy: (Math.random() - 0.5) * 1.2,
+    radius: Math.random() * 2 + 1.5,
+  }));
+  
+  let animationFrameId;
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw links
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 95) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(122, 162, 247, ${1 - dist / 95})`;
+          ctx.lineWidth = 0.8;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+    
+    // Draw nodes
+    ctx.fillStyle = '#bb9af7';
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    animationFrameId = requestAnimationFrame(render);
+  }
+  
+  render();
+  window.addEventListener('beforeunload', () => cancelAnimationFrame(animationFrameId));
+})();
+</script>
+
+---
+
+# Presenter Toolkit & Navigation 🧰
+
+### Keyboard Shortcuts Built for Live Demos
+
+| Key | Presenter Action |
+| :---: | :--- |
+| <kbd>F</kbd> | Toggle Fullscreen Presentation Mode |
+| <kbd>L</kbd> | Toggle glowing trailing Laser Pointer (1s auto-fade) |
+| <kbd>P</kbd> | Toggle persistent Slide Pen drawing annotation tool |
+| <kbd>Ctrl+Z</kbd> / <kbd>Ctrl+Y</kbd> | Undo / Redo pen strokes on current slide |
+| <kbd>W</kbd> | Toggle full Whiteboard canvas (powered by tldraw) |
+| <kbd>O</kbd> | Slide Overview Grid with fuzzy slide filtering |
+| <kbd>?</kbd> | Open MDP Syntax Reference modal |
+
+<!-- note: End of demo deck! Show how pen and laser tools work. -->

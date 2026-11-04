@@ -7,6 +7,11 @@ interface OpenUrlModalProps {
   onClose: () => void;
 }
 
+const SAMPLE_MARKDOWN_URL =
+  'https://raw.githubusercontent.com/07prajwal2000/ViewMD/refs/heads/main/samples/sample1.md';
+const SAMPLE_MDP_URL =
+  'https://raw.githubusercontent.com/07prajwal2000/ViewMD/refs/heads/main/samples/sample2.mdp';
+
 export const OpenUrlModal: React.FC<OpenUrlModalProps> = ({ isOpen, onClose }) => {
   const { loadFromUrl } = useTabs();
   const [url, setUrl] = useState('');
@@ -83,7 +88,7 @@ export const OpenUrlModal: React.FC<OpenUrlModalProps> = ({ isOpen, onClose }) =
                 id="url-input"
                 type="text"
                 autoFocus
-                placeholder="https://raw.githubusercontent.com/.../README.md or /sample-deck.mdp"
+                placeholder="https://raw.githubusercontent.com/07prajwal2000/ViewMD/refs/heads/main/samples/sample1.md"
                 value={url}
                 onChange={(e) => {
                   setUrl(e.target.value);
@@ -107,19 +112,19 @@ export const OpenUrlModal: React.FC<OpenUrlModalProps> = ({ isOpen, onClose }) =
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickLoad('/presentation.mdp')}
+                onClick={() => handleQuickLoad(SAMPLE_MARKDOWN_URL)}
                 disabled={isLoading}
-                className="px-2.5 py-1 text-xs bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md border border-indigo-200/60 dark:border-indigo-800/60 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-md border border-blue-200/60 dark:border-blue-800/60 transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                Showcase Deck (.mdp)
+                <span>Sample Markdown (sample1.md)</span>
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickLoad('/sample-deck.mdp')}
+                onClick={() => handleQuickLoad(SAMPLE_MDP_URL)}
                 disabled={isLoading}
-                className="px-2.5 py-1 text-xs bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-md border border-blue-200/60 dark:border-blue-800/60 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-xs bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-md border border-indigo-200/60 dark:border-indigo-800/60 transition-colors cursor-pointer flex items-center gap-1.5"
               >
-                Sample Presentation
+                <span>Sample Deck (sample2.mdp)</span>
               </button>
             </div>
           </div>
