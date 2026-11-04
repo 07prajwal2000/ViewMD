@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare } from 'lucide-react';
 import { useTabs, type PaneType } from '../../context/TabsContext';
 import type { TabItem } from '../../types/plugin';
 
@@ -15,6 +15,8 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
     activeSecondaryTabId,
     setActiveTabId,
     closeTab,
+    closeOthers,
+    closeAll,
     togglePinTab,
     reorderTabs,
     moveTabToPane,
@@ -293,7 +295,10 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
           }}
         >
           <div
-            style={{ top: `${contextMenuTab.y}px`, left: `${contextMenuTab.x}px` }}
+            style={{
+              top: `${Math.min(contextMenuTab.y, window.innerHeight - 210)}px`,
+              left: `${Math.min(contextMenuTab.x, window.innerWidth - 200)}px`,
+            }}
             className="fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-51 text-xs min-w-[190px]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -347,10 +352,39 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
                 closeTab(contextMenuTab.tab.id, pane);
                 setContextMenuTab(null);
               }}
-              className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
             >
               <X className="w-3 h-3" />
               <span>Close Tab</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={tabs.length <= 1}
+              onClick={() => {
+                closeOthers(contextMenuTab.tab.id, pane);
+                setContextMenuTab(null);
+              }}
+              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left ${
+                tabs.length <= 1
+                  ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer'
+              }`}
+            >
+              <XCircle className="w-3 h-3" />
+              <span>Close Others</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                closeAll(pane);
+                setContextMenuTab(null);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 cursor-pointer"
+            >
+              <XSquare className="w-3 h-3" />
+              <span>Close All</span>
             </button>
           </div>
         </div>

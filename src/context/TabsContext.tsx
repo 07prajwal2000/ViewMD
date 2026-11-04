@@ -30,6 +30,8 @@ interface TabsContextType {
   isSplitView: boolean;
   openFile: (entry: FileEntry, targetPane?: PaneType) => Promise<void>;
   closeTab: (tabId: string, pane: PaneType) => void;
+  closeOthers: (tabId: string, pane: PaneType) => void;
+  closeAll: (pane: PaneType) => void;
   setActiveTabId: (tabId: string, pane: PaneType) => void;
   toggleSplitView: () => void;
   openToSide: (tabId: string, fromPane: PaneType) => void;
@@ -312,6 +314,66 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [primaryTabs, secondaryTabs, activePrimaryTabId, activeSecondaryTabId]
   );
 
+  const closeOthers = useCallback(
+    (tabId: string, pane: PaneType) => {
+      const isPrimary = pane === 'primary';
+      const tabs = isPrimary ? primaryTabs : secondaryTabs;
+      const setTabs = isPrimary ? setPrimaryTabs : setSecondaryTabs;
+      const setActiveId = isPrimary ? setActivePrimaryTabId : setActiveSecondaryTabId;
+
+      const targetTab = tabs.find((t) => t.id === tabId);
+      if (!targetTab) return;
+
+      const tabsToKeep = tabs.filter((t) => t.id === tabId || t.isPinned);
+      const tabsToClose = tabs.filter((t) => t.id !== tabId && !t.isPinned);
+
+      if (tabsToClose.length === 0) return;
+
+      const dirtyTabs = tabsToClose.filter((t) => t.isDirty);
+      if (dirtyTabs.length > 0) {
+        const confirmed = window.confirm(
+          `${dirtyTabs.length} tab(s) have unsaved changes. Are you sure you want to close other tabs?`
+        );
+        if (!confirmed) return;
+      }
+
+      setTabs(tabsToKeep);
+      setActiveId(targetTab.id);
+      setFocusedPane(pane);
+    },
+    [primaryTabs, secondaryTabs]
+  );
+
+  const closeAll = useCallback(
+    (pane: PaneType) => {
+      const isPrimary = pane === 'primary';
+      const tabs = isPrimary ? primaryTabs : secondaryTabs;
+      const setTabs = isPrimary ? setPrimaryTabs : setSecondaryTabs;
+      const setActiveId = isPrimary ? setActivePrimaryTabId : setActiveSecondaryTabId;
+
+      if (tabs.length === 0) return;
+
+      const dirtyTabs = tabs.filter((t) => t.isDirty);
+      if (dirtyTabs.length > 0) {
+        const confirmed = window.confirm(
+          `${dirtyTabs.length} tab(s) have unsaved changes. Are you sure you want to close all tabs?`
+        );
+        if (!confirmed) return;
+      }
+
+      setTabs([]);
+      setActiveId(null);
+
+      // If secondary pane closed all its tabs, close split view automatically
+      if (!isPrimary) {
+        setIsSplitView(false);
+        setActiveSecondaryTabId(null);
+        setFocusedPane('primary');
+      }
+    },
+    [primaryTabs, secondaryTabs]
+  );
+
   const setActiveTabId = useCallback((tabId: string, pane: PaneType) => {
     if (pane === 'primary') {
       setActivePrimaryTabId(tabId);
@@ -533,6 +595,8 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isSplitView,
         openFile,
         closeTab,
+        closeOthers,
+        closeAll,
         setActiveTabId,
         toggleSplitView,
         openToSide,
