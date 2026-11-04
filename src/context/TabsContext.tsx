@@ -48,6 +48,7 @@ interface TabsContextType {
   openFileFromDisk: () => Promise<void>;
   setTabPluginId: (tabId: string, pluginId: string) => void;
   createNewInMemoryFile: (fileName?: string, initialContent?: string, originUrl?: string) => TabItem;
+  createNewPresentationDeck: (deckName?: string) => TabItem;
   loadFromUrl: (url: string) => Promise<boolean>;
 }
 
@@ -365,6 +366,47 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return newTab;
     },
     [primaryTabs, secondaryTabs]
+  );
+
+  const createNewPresentationDeck = useCallback(
+    (customName?: string): TabItem => {
+      let name = customName?.trim();
+      if (!name) {
+        const allTabs = [...primaryTabs, ...secondaryTabs];
+        let counter = 1;
+        while (allTabs.some((t) => t.name.toLowerCase() === `presentation-${counter}.mdp`)) {
+          counter++;
+        }
+        name = `presentation-${counter}.mdp`;
+      }
+      if (!name.endsWith('.mdp') && !name.endsWith('.deck')) {
+        name += '.mdp';
+      }
+
+      const starterMdp = `---
+theme: midnight
+title: ${name.replace(/\.[^/.]+$/, '')}
+aspectRatio: 16:9
+---
+
+# ${name.replace(/\.[^/.]+$/, '')}
+
+Fast, interactive presentation deck built in ViewMD.
+
+- Press **F** for Fullscreen
+- Press **P** for Slide Pen
+- Press **L** for Laser Pointer
+- Press **W** for Whiteboard
+
+---
+
+## Interactive Presentation Engine
+
+Add your slides here with standard Markdown, layout directives, or code!
+`;
+      return createNewInMemoryFile(name, starterMdp);
+    },
+    [primaryTabs, secondaryTabs, createNewInMemoryFile]
   );
 
   const loadFromUrl = useCallback(
@@ -793,6 +835,7 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openFileFromDisk,
         setTabPluginId,
         createNewInMemoryFile,
+        createNewPresentationDeck,
         loadFromUrl,
       }}
     >

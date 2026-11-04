@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import { FolderOpen, AlertTriangle, FileText, FilePlus, FolderPlus, Globe } from 'lucide-react';
+import { FolderOpen, AlertTriangle, FileText, FilePlus, FolderPlus, Globe, Presentation } from 'lucide-react';
 import { ViewMDLogo } from './components/common/ViewMDLogo';
 import { AppHeader } from './components/layout/AppHeader';
 import { TabBar } from './components/layout/TabBar';
@@ -28,6 +28,7 @@ export const App: React.FC = () => {
     moveTabToPane,
     setFocusedPane,
     createNewInMemoryFile,
+    createNewPresentationDeck,
     loadFromUrl,
   } = useTabs();
   const { currentDirectory, isLocalWorkspace, openFolder, createLocalProject } = useWorkspace();
@@ -105,6 +106,15 @@ export const App: React.FC = () => {
             >
               <FilePlus className="w-4 h-4" />
               <span>New File</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => createNewPresentationDeck()}
+              className="flex items-center gap-2 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Presentation className="w-4 h-4" />
+              <span>New Deck (.mdp)</span>
             </button>
 
             <button

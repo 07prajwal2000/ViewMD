@@ -1,7 +1,7 @@
 {
-  "name": "ViewMD - Markdown Viewer & Editor",
+  "name": "ViewMD - Markdown & Presentation Viewer",
   "short_name": "ViewMD",
-  "description": "Fast, bloat-free, 100% client-side Markdown viewer and editor with live preview, tabbed browsing, split pane editing, frontmatter inspector, and direct local disk saving.",
+  "description": "Fast, bloat-free, 100% client-side Markdown viewer, editor, and Keynote presentation slide deck engine (.mdp, .deck) with live preview, tabbed browsing, split pane editing, frontmatter inspector, and direct local disk saving.",
   "id": "viewmd-markdown-app",
   "start_url": "./",
   "scope": "./",
@@ -48,15 +48,39 @@
   "file_handlers": [
     {
       "action": "./",
+      "name": "Markdown Presentation Deck",
+      "accept": {
+        "text/markdown": [
+          ".mdp",
+          ".deck"
+        ],
+        "text/x-markdown": [
+          ".mdp",
+          ".deck"
+        ],
+        "text/plain": [
+          ".mdp",
+          ".deck"
+        ]
+      },
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ],
+      "launch_type": "single-client"
+    },
+    {
+      "action": "./",
       "name": "Markdown Document",
       "accept": {
         "text/markdown": [
           ".md",
           ".markdown",
           ".mdown",
-          ".mkd",
-          ".mdp",
-          ".deck"
+          ".mkd"
         ],
         "text/plain": [
           ".txt"

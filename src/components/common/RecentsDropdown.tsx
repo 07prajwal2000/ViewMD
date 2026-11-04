@@ -10,6 +10,7 @@ import {
   FolderPlus,
   Globe,
   Database,
+  Presentation,
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { useTabs } from '../../context/TabsContext';
@@ -25,7 +26,7 @@ export const RecentsDropdown: React.FC = () => {
     removeRecent,
     createLocalProject,
   } = useWorkspace();
-  const { openFileFromDisk, createNewInMemoryFile } = useTabs();
+  const { openFileFromDisk, createNewInMemoryFile, createNewPresentationDeck } = useTabs();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
@@ -80,7 +81,23 @@ export const RecentsDropdown: React.FC = () => {
                 <FilePlus className="w-4 h-4 text-blue-500" />
                 <span>New In-Memory File</span>
               </div>
-              <span className="text-[10px] text-gray-400">Local</span>
+              <span className="text-[10px] text-gray-400 font-mono">.md</span>
+            </button>
+
+            {/* Action: New Presentation Deck (.mdp) */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                createNewPresentationDeck();
+              }}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:bg-purple-50 dark:hover:bg-purple-900/30 text-gray-800 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <Presentation className="w-4 h-4 text-purple-500" />
+                <span>New Presentation Deck</span>
+              </div>
+              <span className="text-[10px] text-purple-500 font-mono font-medium">.mdp</span>
             </button>
 
             {/* Action: New Local Project */}

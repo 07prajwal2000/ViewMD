@@ -72,7 +72,7 @@ Most modern Markdown editors come with significant trade-offs:
 
 ### 🚀 Progressive Web App (PWA) & File Associations
 - **Installable Desktop/Mobile App**: Install directly from Chrome/Edge as a native desktop application.
-- **Default `.md` & `.mdp` File Handler**: Uses the modern **W3C File Handling API** (`launchQueue`) to register ViewMD as your system's default viewer/editor for `.md`, `.markdown`, `.mdp`, and `.txt` files.
+- **Default `.mdp`, `.deck`, & `.md` File Handler**: Uses the modern **W3C File Handling API** (`launchQueue`) and Web App Manifest `file_handlers` to register ViewMD as your operating system's default application for `.mdp` and `.deck` Keynote presentation decks as well as `.md`, `.markdown`, and `.txt` files.
 - **Offline First**: Precached Service Worker allows you to view and edit Markdown completely offline with zero latency.
 - **Direct File Open (`Ctrl+O`)**: Open single or multiple files on disk without having to mount an entire directory.
 
