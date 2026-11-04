@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare, Presentation } from 'lucide-react';
+import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare, Presentation, Save } from 'lucide-react';
 import { useTabs, type PaneType } from '../../context/TabsContext';
 import type { TabItem } from '../../types/plugin';
 
@@ -14,6 +14,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
     activePrimaryTabId,
     activeSecondaryTabId,
     setActiveTabId,
+    saveTab,
     closeTab,
     closeOthers,
     closeAll,
@@ -305,6 +306,23 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
             className="fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-51 text-xs min-w-[190px]"
             onClick={(e) => e.stopPropagation()}
           >
+            <button
+              type="button"
+              onClick={() => {
+                void saveTab(contextMenuTab.tab.id);
+                setContextMenuTab(null);
+              }}
+              disabled={!contextMenuTab.tab.isDirty && !contextMenuTab.tab.isInMemory}
+              className={`w-full flex items-center gap-2 px-3 py-1.5 text-left transition-colors ${
+                contextMenuTab.tab.isDirty || contextMenuTab.tab.isInMemory
+                  ? 'hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium cursor-pointer'
+                  : 'text-gray-400 dark:text-gray-500 cursor-default opacity-60'
+              }`}
+            >
+              <Save className="w-3 h-3" />
+              <span>{contextMenuTab.tab.isDirty || contextMenuTab.tab.isInMemory ? 'Save Tab (Ctrl+S)' : 'Tab Saved'}</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {

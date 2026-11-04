@@ -15,7 +15,7 @@ interface AppHeaderProps {
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSidebar }) => {
-  const { activeTab, saveActiveFile } = useTabs();
+  const { activeTab, saveTab, saveActiveFile } = useTabs();
   const { openSearch } = useSearch();
 
   // Determine active plugin header actions if any
@@ -26,6 +26,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
       HeaderActionComponent = plugin.headerActions;
     }
   }
+
+  const handleSave = () => {
+    if (activeTab) {
+      void saveTab(activeTab.id);
+    } else {
+      void saveActiveFile();
+    }
+  };
 
   return (
     <header className="h-11 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161b22] px-3 flex items-center justify-between select-none z-30 transition-colors">
@@ -57,7 +65,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
       {/* Center: Plugin Header Action (e.g. 3-switch Edit/Split/Preview + Save) */}
       <div className="flex items-center justify-center shrink-0">
         {HeaderActionComponent && activeTab && (
-          <HeaderActionComponent tab={activeTab} onSave={saveActiveFile} />
+          <HeaderActionComponent tab={activeTab} onSave={handleSave} />
         )}
       </div>
 

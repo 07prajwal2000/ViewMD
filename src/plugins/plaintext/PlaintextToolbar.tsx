@@ -20,17 +20,17 @@ export const PlaintextToolbar: React.FC<ViewerHeaderActionProps> = ({ tab, onSav
 
       <button
         type="button"
-        onClick={onSave}
-        disabled={!tab.isDirty}
-        title={tab.isDirty ? 'Save to disk (Ctrl+S)' : 'All changes saved to disk'}
+        onClick={() => onSave()}
+        disabled={!tab.isDirty && !tab.isInMemory}
+        title={tab.isDirty || tab.isInMemory ? 'Save to disk / local project (Ctrl+S)' : 'All changes saved to disk'}
         className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium transition-all ${
-          tab.isDirty
+          tab.isDirty || tab.isInMemory
             ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer'
             : 'bg-transparent text-gray-400 dark:text-gray-500 cursor-default opacity-60'
         }`}
       >
         <Save className="w-3.5 h-3.5" />
-        <span>{tab.isDirty ? 'Save' : 'Saved'}</span>
+        <span>{tab.isDirty || tab.isInMemory ? 'Save' : 'Saved'}</span>
       </button>
     </div>
   );

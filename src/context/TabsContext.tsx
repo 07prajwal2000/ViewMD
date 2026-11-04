@@ -18,6 +18,7 @@ import {
   saveFileToLocalProject,
 } from '../services/storage/localProjects';
 import { useWorkspace } from './WorkspaceContext';
+import { resolveTargetPane } from './resolveTargetPane';
 
 export type PaneType = 'primary' | 'secondary';
 
@@ -729,9 +730,12 @@ Add your slides here with standard Markdown, layout directives, or code!
 
         // 3. In-memory file without a project -> save as LocalStorage project
         const defaultProjectName = 'LocalStorage Project';
-        const projectName =
-          window.prompt('Save to LocalStorage Project name:', defaultProjectName)?.trim() ||
-          defaultProjectName;
+        const inputName = window.prompt('Save to LocalStorage Project name:', defaultProjectName);
+        if (inputName === null) {
+          // User cancelled prompt
+          return false;
+        }
+        const projectName = inputName.trim() || defaultProjectName;
 
         const project = findOrCreateLocalProjectByName(projectName);
         saveFileToLocalProject(project.id, tab.name, String(tab.content));
@@ -770,12 +774,16 @@ Add your slides here with standard Markdown, layout directives, or code!
 
   const saveActiveFile = useCallback(
     async (targetPane?: PaneType): Promise<boolean> => {
-      const pane = targetPane || focusedPane;
-      const activeId = pane === 'primary' ? activePrimaryTabId : activeSecondaryTabId;
-      if (!activeId) return false;
+      const effectivePane = resolveTargetPane(targetPane, isSplitView, focusedPane);
+      const activeId = effectivePane === 'secondary' ? activeSecondaryTabId : activePrimaryTabId;
+      if (!activeId) {
+        const fallbackId = activePrimaryTabId || activeSecondaryTabId;
+        if (!fallbackId) return false;
+        return saveTab(fallbackId);
+      }
       return saveTab(activeId);
     },
-    [focusedPane, activePrimaryTabId, activeSecondaryTabId, saveTab]
+    [isSplitView, focusedPane, activePrimaryTabId, activeSecondaryTabId, saveTab]
   );
 
   const openFileFromDisk = useCallback(async () => {
