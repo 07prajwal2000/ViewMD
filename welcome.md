@@ -23,7 +23,7 @@ github: https://github.com/07prajwal2000/ViewMD
 
 ## ⚡ Quick Highlights
 
-- [x] **Installable PWA with File Handling**: Registered as the default app handler for `.md`, `.markdown`, and `.txt` files in your OS
+- [x] **Installable PWA with Native File Handling**: Registered as default handler for `.mdp`, `.deck`, `.md`, `.markdown`, and `.txt` files in your OS
 - [x] **Smart Frontmatter Inspector** with structured table, raw YAML switch, tag badges, and copy action
 - [x] **Direct Local Disk Access** via the modern *File System Access API*
 - [x] **Dual-Pane Split Editor Groups** with cross-pane tab movement
@@ -32,8 +32,9 @@ github: https://github.com/07prajwal2000/ViewMD
 - [x] **Tab Persistence & Pinning** across browser refreshes
 - [x] **Word Wrap Toggle** right next to the theme switcher
 - [x] **Offline-Ready PWA**: Cached app shell with zero network latency
-- [x] **Universal File Support** (Markdown, PDF, Plaintext code buffers)
-- [ ] *Coming Soon: `.mdp` Markdown Presentation Slides!*
+- [x] **Universal File Support** (Markdown, Presentations, PDF, Plaintext code buffers)
+- [x] **Interactive Presentation Engine (`.mdp` & `.deck`)**: Keynote slide decks with 6 themes, HTML5 canvas animations, slide pen, laser pointer, whiteboard, and 16:9 PDF export
+- [x] **Zero-FS LocalStorage Projects & URL Loader**: Load Markdown from `?url=<url>` and create in-memory files and LocalStorage projects anywhere
 
 ---
 
