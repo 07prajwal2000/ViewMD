@@ -12,6 +12,7 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
+  Presentation,
 } from 'lucide-react';
 import type { FileEntry } from '../../types/fileSystem';
 import { useTabs } from '../../context/TabsContext';
@@ -134,6 +135,9 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
       case 'md':
       case 'markdown':
         return <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+      case 'mdp':
+      case 'deck':
+        return <Presentation className="w-3.5 h-3.5 text-indigo-500 shrink-0" />;
       case 'pdf':
         return <File className="w-3.5 h-3.5 text-rose-500 shrink-0" />;
       case 'json':

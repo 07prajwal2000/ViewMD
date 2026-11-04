@@ -1,0 +1,290 @@
+---
+title: "ViewMD Presentation Engine (.mdp)"
+theme: "tokyo-night"
+aspectRatio: "16:9"
+transition: "slide"
+author: "Prajwal"
+date: "2026-11-04"
+---
+
+# ViewMD Presentation Engine
+### Fast, Minimal & Interactive Slide Decks from Plain Markdown
+
+- **File Extension**: Native support for `.mdp` and `.deck` files
+- **Slide Separation**: Simple `---` (3 dashes) between slides
+- **6 Themed Palettes**: Midnight, Tokyo Night, Mocha, Paper, Daylight, Obsidian
+- **Interactive Slides**: Embedded Canvas animations, live SVGs, and interactive widgets
+- **Deckrun Compatible**: Smart layout directives (`"right"`, `"left"`, `"bg"`)
+- **Laser Pointer**: Glowing trailing laser-pen tool (<kbd>L</kbd>) that auto-hides
+- **Slide Whiteboard**: Built-in `tldraw` sketch canvas (<kbd>W</kbd>) with in-memory persistence
+- **Export to PDF**: Dedicated 16:9 vector print engine for keynote presentations
+
+---
+
+# Slide Syntax & Frontmatter
+### Author Keynote Decks in Pure Plaintext
+
+Each `.mdp` deck starts with optional YAML frontmatter configuring deck-wide properties:
+
+```yaml
+---
+title: "Distributed Systems Architecture"
+theme: "tokyo-night" # midnight | tokyo-night | mocha | paper | daylight | obsidian
+aspectRatio: "16:9"   # 16:9 | 4:3 | 16:10
+author: "Your Name"
+---
+```
+
+Slides are separated by `---` on an empty line:
+
+```markdown
+# Slide Title
+Slide content here...
+
+---
+
+# Next Slide
+More bullet points...
+```
+
+> **Smart Parser**: Delimiters inside fenced code blocks are protected and will never accidentally split your slides!
+
+---
+
+# Curated Keynote Themes
+### Distinct Typography & Coordinated Color Palettes
+
+| Theme | Aesthetic | Background | Accent | Typography |
+| :--- | :--- | :--- | :--- | :--- |
+| **Midnight** | Deep slate developer dark | `#0a0f1d` | Electric Cyan | Inter + JetBrains Mono |
+| **Tokyo Night** | Neon cyberpunk dark | `#1a1b26` | Neon Violet & Pink | Outfit + JetBrains Mono |
+| **Mocha** | Warm Catppuccin espresso | `#1e1e2e` | Mauve & Rosewater | Plus Jakarta + Fira Code |
+| **Paper** | Editorial warm newsprint | `#faf8f5` | Charcoal & Amber | Serif (Georgia) + Mono |
+| **Daylight** | Clean Swiss modern light | `#f8fafc` | Deep Slate & Blue | Inter + Roboto Mono |
+| **Obsidian** | High-contrast OLED pitch | `#000000` | Lime Green (`#a3e635`) | Geist / Inter + Mono |
+
+Switch themes live anytime using the **Theme Dropdown** in the header or by pressing the palette button on the floating HUD.
+
+---
+
+# Split Layout Directive (`"right"`)
+### Deckrun-Compatible Smart Image Placement
+
+![Server Architecture](https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop "right opacity:0.9")
+
+- Add `"right"` to the image title:
+  `![Alt](url "right")`
+- Automatically creates a 50/50 split layout
+- Text docks cleanly on the left
+- Media docks cleanly on the right
+- Opacity modifiers supported:
+  `"right opacity:0.85"`
+- Zero CSS or complex formatting needed
+
+---
+
+# Split Layout Directive (`"left"`)
+### Media-First Visual Slide Presentations
+
+![Clean Workspace](https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&auto=format&fit=crop "left")
+
+- Add `"left"` to the image title:
+  `![Alt](url "left")`
+- Places visual media on the left panel
+- Content and bullet points on the right
+- Responsive auto-scaling maintains proportions on any display resolution
+- Ideal for walkthroughs, hardware diagrams, and screenshots
+
+---
+
+# Interactive HTML5 Canvas
+### Live Particle Constellation at 60 FPS
+
+<canvas id="constellationCanvas" width="1200" height="420" class="w-full h-96 rounded-2xl border border-white/10 shadow-2xl bg-[#090d16] block"></canvas>
+
+<script>
+  const canvas = document.getElementById('constellationCanvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    const numNodes = 45;
+    const nodes = [];
+
+    for (let i = 0; i < numNodes; i++) {
+      nodes.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 1.6,
+        vy: (Math.random() - 0.5) * 1.6,
+        radius: 3 + Math.random() * 2.5,
+        color: `hsl(${190 + Math.random() * 80}, 90%, 65%)`
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < numNodes; i++) {
+        for (let j = i + 1; j < numNodes; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 130) {
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(187, 154, 247, ${1 - dist / 130})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (const node of nodes) {
+        node.x += node.vx;
+        node.y += node.vy;
+        if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
+        if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        ctx.fillStyle = node.color;
+        ctx.shadowColor = node.color;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+</script>
+
+---
+
+# Animated SVG Graphics
+### Crisp Vector Diagrams & CSS Keyframes
+
+<div class="flex items-center justify-center py-6">
+  <svg viewBox="0 0 240 240" class="w-72 h-72 select-none">
+    <defs>
+      <linearGradient id="neonGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#38bdf8" />
+        <stop offset="50%" stop-color="#bb9af7" />
+        <stop offset="100%" stop-color="#f43f5e" />
+      </linearGradient>
+    </defs>
+    <!-- Outer Orbit -->
+    <circle cx="120" cy="120" r="90" fill="none" stroke="url(#neonGlow)" stroke-width="4" stroke-dasharray="24 12" class="animate-spin" style="transform-origin: center; animation-duration: 14s;" />
+    <!-- Mid Orbit -->
+    <circle cx="120" cy="120" r="60" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="12 8" class="animate-spin" style="transform-origin: center; animation-duration: 8s; animation-direction: reverse;" />
+    <!-- Center Core -->
+    <circle cx="120" cy="120" r="22" fill="#bb9af7" opacity="0.9" />
+    <circle cx="120" cy="120" r="10" fill="#ffffff" />
+    <!-- Orbiting Satellite -->
+    <circle cx="210" cy="120" r="7" fill="#f43f5e" />
+  </svg>
+</div>
+
+- Full inline SVG support via `rehype-raw`
+- Seamless Tailwind animation utilities (`animate-spin`, `animate-pulse`, `animate-bounce`)
+- Scales cleanly to 4K projectors without pixelation
+
+---
+
+# Interactive HTML Widgets
+### Embedded Controls for Live Demonstrations
+
+Slides can include real interactive UI widgets that respond to presenter clicks:
+
+<div class="my-8 p-8 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-between max-w-3xl mx-auto shadow-2xl">
+  <div>
+    <h3 class="text-3xl font-bold text-white mb-2">Live Click Counter</h3>
+    <p class="text-xl text-gray-300">Click the button below to test live slide script execution.</p>
+  </div>
+  <button id="demoClickBtn" class="px-8 py-4 rounded-2xl font-bold text-2xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-xl shadow-indigo-500/30 active:scale-95 transition-all cursor-pointer">
+    Clicks: <span id="clickCount">0</span>
+  </button>
+</div>
+
+<script>
+  let count = 0;
+  const btn = document.getElementById('demoClickBtn');
+  const label = document.getElementById('clickCount');
+  if (btn && label) {
+    btn.addEventListener('click', () => {
+      count++;
+      label.textContent = count;
+      btn.style.transform = 'scale(0.95)';
+      setTimeout(() => { btn.style.transform = 'scale(1)'; }, 100);
+    });
+  }
+</script>
+
+- Safely executed in a scoped container context
+- Event listeners are automatically detached upon leaving the slide
+
+---
+
+# Keynote Code Highlighting
+### Syntax Highlighting with Highlight.js
+
+```typescript
+import { parsePresentation, getTheme } from './plugins/presentation';
+
+// 1. Parse markdown text into structured slides and layout directives
+const presentation = parsePresentation(markdownContent);
+
+// 2. Load theme configuration with typography and accent colors
+const theme = getTheme('tokyo-night');
+
+console.log(`Loaded ${presentation.totalSlides} keynote slides`);
+```
+
+> "Make it work, make it right, make it fast." — Kent Beck
+
+- High-contrast syntax tokens matching the active dark/light palette
+- Preserves line breaks, indentation, and monospaced font alignment
+
+---
+
+# Navigation & Presenter Tools
+### Keyboard-First Ergonomics for Technical Speakers
+
+- **<kbd>→</kbd> / <kbd>Space</kbd> / <kbd>PageDown</kbd>**: Advance to next slide
+- **<kbd>←</kbd> / <kbd>Backspace</kbd> / <kbd>PageUp</kbd>**: Return to previous slide
+- **<kbd>Home</kbd> / <kbd>End</kbd>**: Jump to the first / last slide
+- **<kbd>F</kbd>**: Toggle Fullscreen Presentation Mode
+- **<kbd>O</kbd> / <kbd>Esc</kbd>**: Open the **Slide Overview Grid** to visually browse thumbnails
+- **<kbd>L</kbd>**: Toggle **Glowing Laser Pointer** with fading trails & auto-hide
+- **<kbd>P</kbd>**: Toggle **Persistent Slide Pen** to draw on top of slides (saved in memory)
+- **<kbd>W</kbd>**: Open **Slide Whiteboard** (`tldraw`) for full canvas sketching (saved per slide)
+- **<kbd>?</kbd>**: Open **In-App MDP Documentation & Hotkeys Guide**
+- **Text Density Control**: Use `<!-- size: compact -->` or the toolbar selector for dense slides
+- **Floating Presenter HUD**: Bottom control bar with quick controls (fades on idle)
+
+---
+
+![Background Graphic](https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1600&auto=format&fit=crop "bg opacity:0.18")
+
+# One-Click PDF Export
+### Offline Keynote Presentations Anytime, Anywhere
+
+- **Full Bleed Backgrounds**:
+  Use `![Hero](url "bg opacity:0.18")` for atmospheric background art
+- **Export to PDF**:
+  Click **Export PDF** in the toolbar or HUD to generate a clean 16:9 PDF
+- **Crisp Vector Output**:
+  Uses `@page { size: 16in 9in; }` for razor-sharp vector rendering
+- **Built-in PDF Viewer**:
+  Open the exported PDF directly in ViewMD's built-in PDF viewer tab!
+
+---
+
+# Ready to Build Your Next Deck?
+### 100% Client-Side. Zero Backend. Zero Bloat.
+
+- **Create a `.mdp` file** anywhere in your workspace
+- **Or click "Present"** on any existing `.md` document
+- Everything runs locally in your browser with offline PWA support
+
+🔗 [ViewMD on GitHub](https://github.com/07prajwal2000/ViewMD)

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Edit3, Columns, Eye, Save } from 'lucide-react';
+import { Edit3, Columns, Eye, Save, Presentation } from 'lucide-react';
 import type { ViewerHeaderActionProps } from '../../types/plugin';
 import { getStoredViewMode, setStoredViewMode, type MarkdownViewMode } from '../../services/storage/settings';
+import { useTabs } from '../../context/TabsContext';
 
 interface MarkdownToolbarProps extends ViewerHeaderActionProps {
   viewMode?: MarkdownViewMode;
@@ -16,6 +17,7 @@ export const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({
 }) => {
   const [internalMode, setInternalMode] = React.useState<MarkdownViewMode>(getStoredViewMode());
   const currentMode = propViewMode ?? internalMode;
+  const { setTabPluginId } = useTabs();
 
   const handleModeChange = (mode: MarkdownViewMode) => {
     setStoredViewMode(mode);
@@ -73,6 +75,17 @@ export const MarkdownToolbar: React.FC<MarkdownToolbarProps> = ({
           <span>Preview</span>
         </button>
       </div>
+
+      {/* Present as Slides Toggle */}
+      <button
+        type="button"
+        onClick={() => setTabPluginId(tab.id, 'presentation')}
+        title="Present as slide deck (.mdp mode)"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-200/50 dark:bg-gray-800/80 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer transition-colors"
+      >
+        <Presentation className="w-3.5 h-3.5 text-indigo-500" />
+        <span className="hidden sm:inline">Present</span>
+      </button>
 
       {/* Save Button */}
       <button

@@ -2,8 +2,12 @@ import { pluginRegistry } from './registry';
 import { markdownPlugin } from './markdown';
 import { pdfPlugin } from './pdf';
 import { plaintextPlugin } from './plaintext';
+import { presentationPlugin } from './presentation';
 
 export function initializePlugins(): void {
+  // Register Presentation plugin for .mdp, .deck
+  pluginRegistry.register(presentationPlugin);
+
   // Register Markdown plugin for .md, .markdown, etc.
   pluginRegistry.register(markdownPlugin);
 
@@ -15,3 +19,4 @@ export function initializePlugins(): void {
 }
 
 export { pluginRegistry };
+

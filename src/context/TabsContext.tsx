@@ -42,6 +42,7 @@ interface TabsContextType {
   saveTab: (tabId: string) => Promise<boolean>;
   saveActiveFile: (targetPane?: PaneType) => Promise<boolean>;
   openFileFromDisk: () => Promise<void>;
+  setTabPluginId: (tabId: string, pluginId: string) => void;
 }
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined);
@@ -580,6 +581,13 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [openFile]);
 
+  const setTabPluginId = useCallback((tabId: string, pluginId: string) => {
+    const updateTabs = (tabs: TabItem[]) =>
+      tabs.map((t) => (t.id === tabId ? { ...t, pluginId } : t));
+    setPrimaryTabs(updateTabs);
+    setSecondaryTabs(updateTabs);
+  }, []);
+
   return (
     <TabsContext.Provider
       value={{
@@ -607,6 +615,7 @@ export const TabsProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveTab,
         saveActiveFile,
         openFileFromDisk,
+        setTabPluginId,
       }}
     >
       {children}

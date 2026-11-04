@@ -30,9 +30,9 @@ export async function openFilePicker(): Promise<FileSystemFileHandle[] | null> {
       multiple: true,
       types: [
         {
-          description: 'Markdown Documents',
+          description: 'Supported Files (Markdown, Presentations, PDF)',
           accept: {
-            'text/markdown': ['.md', '.markdown', '.mdown', '.mkd'],
+            'text/markdown': ['.md', '.markdown', '.mdown', '.mkd', '.mdp', '.deck'],
             'text/plain': ['.txt'],
             'application/pdf': ['.pdf'],
           },

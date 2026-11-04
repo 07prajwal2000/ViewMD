@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare } from 'lucide-react';
+import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare, Presentation } from 'lucide-react';
 import { useTabs, type PaneType } from '../../context/TabsContext';
 import type { TabItem } from '../../types/plugin';
 
@@ -37,6 +37,9 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
       return <File className="w-3.5 h-3.5 text-rose-500 shrink-0" />;
     }
     const ext = name.split('.').pop()?.toLowerCase();
+    if (ext === 'mdp' || ext === 'deck') {
+      return <Presentation className="w-3.5 h-3.5 text-indigo-500 shrink-0" />;
+    }
     if (ext === 'md' || ext === 'markdown') {
       return <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
     }

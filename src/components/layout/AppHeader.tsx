@@ -30,7 +30,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
   return (
     <header className="h-11 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#161b22] px-3 flex items-center justify-between select-none z-30 transition-colors">
       {/* Left section: Sidebar toggle, Branding, Workspace selector */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
           onClick={onToggleSidebar}
@@ -55,14 +55,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ isSidebarOpen, onToggleSid
       </div>
 
       {/* Center: Plugin Header Action (e.g. 3-switch Edit/Split/Preview + Save) */}
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center shrink-0">
         {HeaderActionComponent && activeTab && (
           <HeaderActionComponent tab={activeTab} onSave={saveActiveFile} />
         )}
       </div>
 
       {/* Right section: Search, Theme Switcher, Wrap Text & Links */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           type="button"
           onClick={() => openSearch('files')}

@@ -1,0 +1,118 @@
+---
+title: "Modern Presentations with ViewMD"
+theme: "tokyo-night"
+aspectRatio: "16:9"
+author: "Prajwal"
+date: "2026-11-04"
+---
+
+# Modern Presentations
+### Fast, Minimal & Interactive Slide Decks from Markdown
+
+<!-- note: Welcome everyone! This slide deck runs 100% locally in ViewMD. -->
+
+- **Separated by `---` 3-dashes**
+- **Sleek Themes**: Midnight, Tokyo Night, Paper, Mocha, Daylight, Obsidian
+- **Interactive**: Raw HTML, Canvas animations, and SVG morphs
+- **Export to PDF**: Instant 16:9 vector print export
+
+---
+
+# Split Media Directives
+### Inspired by Deckrun's Smart Layouts
+
+![Server Architecture](https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&auto=format&fit=crop "right")
+
+- Use `![Alt](url "right")` for 50/50 right split
+- Use `![Alt](url "left")` for left column layout
+- Supports opacity modifiers like `"right opacity:0.85"`
+- Content adjusts automatically to virtual 16:9 canvas
+
+<!-- note: Demonstrate how images dock to the right side without requiring any CSS grid code. -->
+
+---
+
+# Interactive HTML5 Canvas
+### Live Particle Waves Inside Any Slide
+
+<canvas id="particleCanvas" width="900" height="420" class="w-full h-80 rounded-2xl border border-white/10 shadow-2xl bg-[#090d16]"></canvas>
+
+<script>
+  const canvas = document.getElementById('particleCanvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    let step = 0;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const points = 45;
+      const width = canvas.width;
+      const height = canvas.height;
+      for (let i = 0; i < points; i++) {
+        const x = (i / points) * width;
+        const y = height / 2 + Math.sin(step * 0.05 + i * 0.25) * 60;
+        const radius = 4 + Math.sin(step * 0.08 + i) * 2;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${(i * 12 + step * 2) % 360}, 85%, 65%)`;
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+      }
+      step++;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+</script>
+
+---
+
+# Animated SVG Graphics
+### Crisp Vector Keyframes & Morphing
+
+<div class="flex items-center justify-center p-8">
+  <svg viewBox="0 0 200 200" class="w-64 h-64">
+    <defs>
+      <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#38bdf8" />
+        <stop offset="100%" stop-color="#bb9af7" />
+      </linearGradient>
+    </defs>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="url(#grad1)" stroke-width="6" stroke-dasharray="20 10" class="animate-spin" style="transform-origin: center; animation-duration: 10s;" />
+    <circle cx="100" cy="100" r="45" fill="none" stroke="#f43f5e" stroke-width="4" stroke-dasharray="8 6" class="animate-spin" style="transform-origin: center; animation-duration: 6s; animation-direction: reverse;" />
+    <circle cx="100" cy="100" r="15" fill="#a3e635" />
+  </svg>
+</div>
+
+---
+
+# Keynote Code Highlighting
+### Syntax Formatted with Highlight.js
+
+```typescript
+import { parsePresentation } from './parser';
+
+// Parse presentation into slides and extract directives
+const deck = parsePresentation(rawMarkdown);
+
+console.log(`Loaded ${deck.totalSlides} interactive slides`);
+// Supports Keyboard navigation: Arrow keys, F (Fullscreen), O (Overview)
+```
+
+> "Simplicity is prerequisite for reliability." — Edsger W. Dijkstra
+
+<!-- note: Code blocks automatically match the active dark or light presentation theme. -->
+
+---
+
+![Landscape Backdrop](https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop "bg opacity:0.18")
+
+# Ready to Present?
+### Hit `F` for Fullscreen or Export to PDF
+
+- **Arrow Right / Space**: Next Slide
+- **Arrow Left / Backspace**: Previous Slide
+- **O / Esc**: Slide Overview Thumbnail Picker
+- **Export PDF Button**: Crisp 16:9 vector print export for offline presenting
+
+<!-- note: Thank the audience and take questions! -->

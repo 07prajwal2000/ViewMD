@@ -54,7 +54,9 @@
           ".md",
           ".markdown",
           ".mdown",
-          ".mkd"
+          ".mkd",
+          ".mdp",
+          ".deck"
         ],
         "text/plain": [
           ".txt"

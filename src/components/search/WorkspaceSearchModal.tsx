@@ -11,6 +11,7 @@ import {
   FolderOpen,
   CaseSensitive,
   Regex as RegexIcon,
+  Presentation,
 } from 'lucide-react';
 import { useSearch } from '../../context/SearchContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
@@ -73,8 +74,10 @@ function getFileIcon(fileName: string) {
   switch (ext) {
     case 'md':
     case 'markdown':
-    case 'mdp':
       return <FileText className="w-4 h-4 text-blue-500 shrink-0" />;
+    case 'mdp':
+    case 'deck':
+      return <Presentation className="w-4 h-4 text-indigo-500 shrink-0" />;
     case 'pdf':
       return <File className="w-4 h-4 text-rose-500 shrink-0" />;
     case 'js':

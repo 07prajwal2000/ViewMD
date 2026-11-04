@@ -72,9 +72,26 @@ Most modern Markdown editors come with significant trade-offs:
 
 ### 🚀 Progressive Web App (PWA) & File Associations
 - **Installable Desktop/Mobile App**: Install directly from Chrome/Edge as a native desktop application.
-- **Default `.md` File Handler**: Uses the modern **W3C File Handling API** (`launchQueue`) to register ViewMD as your system's default viewer/editor for `.md`, `.markdown`, and `.txt` files.
+- **Default `.md` & `.mdp` File Handler**: Uses the modern **W3C File Handling API** (`launchQueue`) to register ViewMD as your system's default viewer/editor for `.md`, `.markdown`, `.mdp`, and `.txt` files.
 - **Offline First**: Precached Service Worker allows you to view and edit Markdown completely offline with zero latency.
 - **Direct File Open (`Ctrl+O`)**: Open single or multiple files on disk without having to mount an entire directory.
+
+### 🎭 Markdown Presentation Engine (`.mdp` & `.deck`)
+- **Keynote Slide Decks from Plain Markdown**: Author slides separated by `---` (3-dashes) with live split preview.
+- **Minimalist & Stylish Themes**: Curated palettes and coordinated typography—**Midnight**, **Tokyo Night**, **Mocha**, **Paper**, **Daylight**, and **Obsidian**.
+- **Deckrun-Style Image Directives**:
+  - `![Diagram](url "right")` &rarr; 50/50 right-column layout.
+  - `![Diagram](url "left")` &rarr; 50/50 left-column layout.
+  - `![Hero](url "bg opacity:0.3")` &rarr; Full-bleed slide background with custom opacity overlay.
+- **Interactive Slides**: Native execution of HTML5 `<canvas>` animations, vector animated SVGs, video, and custom interactive widgets with automatic memory cleanup.
+- **Presenter Controls**:
+  - Fullscreen Presentation Mode (`F`).
+  - Arrow navigation (`→` / `←` / `Space` / `Backspace` / `Home` / `End`).
+  - Slide Overview Grid (`O` / `Esc`) with fuzzy search to jump to any slide thumbnail.
+  - Speaker Notes drawer (`<!-- note: ... -->`).
+  - Auto-hiding floating presenter HUD and bottom progress bar.
+- **Instant PDF Export**: Dedicated vector 16:9 print engine (`window.print()`) for offline keynote presentations and opening in ViewMD's built-in PDF viewer.
+- **One-Click Presentation Mode for `.md`**: Present any standard Markdown document as a slide deck with a single click in the header toolbar.
 
 ### 🏷️ Interactive Frontmatter Inspector
 - **Smart Parsing**: Automatically extracts YAML frontmatter and renders a clean metadata card at the top of the preview pane.
@@ -100,6 +117,10 @@ Most modern Markdown editors come with significant trade-offs:
 | <kbd>Ctrl</kbd> + <kbd>P</kbd> / <kbd>Cmd</kbd> + <kbd>P</kbd> | Open Fuzzy File Search (Quick Open) |
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | Open Find in Files (Content Search) |
 | <kbd>Ctrl</kbd> + <kbd>Enter</kbd> | In search modal: Open file in split side pane |
+| <kbd>F</kbd> | In slide deck: Toggle Fullscreen Presentation Mode |
+| <kbd>O</kbd> | In slide deck: Open Slide Overview Thumbnail Grid |
+| <kbd>→</kbd> / <kbd>Space</kbd> | In slide deck: Next slide |
+| <kbd>←</kbd> / <kbd>Backspace</kbd> | In slide deck: Previous slide |
 | <kbd>Middle Click</kbd> | Close tab |
 | <kbd>Esc</kbd> | Dismiss modals and context menus |
 
