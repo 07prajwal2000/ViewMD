@@ -197,6 +197,18 @@ export async function resolvePath(
 }
 
 /**
+ * Path to copy for a disk-backed entry. Browsers never expose absolute disk paths,
+ * so this is "<opened folder>/sub/file.md", or just the name when outside that folder.
+ */
+export async function getCopyPath(
+  handle: FileSystemHandle,
+  root: FileSystemDirectoryHandle | null
+): Promise<string> {
+  const segments = await root?.resolve(handle);
+  return segments ? [root!.name, ...segments].join('/') : handle.name;
+}
+
+/**
  * Deletes a file or directory
  */
 export async function deleteEntry(
