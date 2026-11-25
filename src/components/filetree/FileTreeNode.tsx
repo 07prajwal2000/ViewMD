@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ChevronRight,
   ChevronDown,
@@ -13,10 +13,12 @@ import {
   Edit2,
   Trash2,
   Presentation,
+  Copy,
 } from 'lucide-react';
 import type { FileEntry } from '../../types/fileSystem';
 import { useTabs } from '../../context/TabsContext';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { getCopyPath } from '../../services/fileSystem/fileAccess';
 
 interface FileTreeNodeProps {
   entry: FileEntry;
@@ -30,28 +32,18 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
   onNewPrompt,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(entry.name);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const menuRef = useRef<HTMLDivElement>(null);
   const { openFile, activePrimaryTabId, activeSecondaryTabId, closeTab } = useTabs();
-  const { deleteNode, renameNode, moveNode, fileTree } = useWorkspace();
+  const { deleteNode, renameNode, moveNode, fileTree, currentDirectory } = useWorkspace();
 
   const isDirectory = entry.kind === 'directory';
   const isSelected = !isDirectory && (activePrimaryTabId === entry.id || activeSecondaryTabId === entry.id);
-
-  // Close 3-dot menu on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Only disk-backed entries have a handle (LocalStorage projects don't)
+  const fsHandle = entry.handle ?? entry.fileHandle ?? entry.dirHandle;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,7 +69,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsMenuOpen(false);
+    setMenuPos(null);
     const success = await deleteNode(entry);
     if (success) {
       // If deleted entry is open in tabs, close in both panes
@@ -168,6 +160,11 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
         onClick={handleClick}
+        onContextMenu={(e) => {
+          if (isRenaming) return; // keep the native menu in the rename input
+          e.preventDefault();
+          setMenuPos({ x: e.clientX, y: e.clientY });
+        }}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
         className={`flex items-center justify-between pr-2 py-1 cursor-pointer group transition-colors rounded-sm relative ${
           isSelected
@@ -257,50 +254,77 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
             )}
 
             {/* 3-dot context menu for both file & folder */}
-            <div className="relative" ref={menuRef}>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMenuOpen(!isMenuOpen);
-                }}
-                className="p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded cursor-pointer"
-                title="Options"
-              >
-                <MoreVertical className="w-3 h-3" />
-              </button>
-
-              {isMenuOpen && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-50 text-xs"
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      setIsRenaming(true);
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>Rename</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                setMenuPos({ x: rect.left, y: rect.bottom + 4 });
+              }}
+              className="p-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200/50 dark:hover:bg-gray-700/50 rounded cursor-pointer"
+              title="Options"
+            >
+              <MoreVertical className="w-3 h-3" />
+            </button>
           </div>
         )}
       </div>
+
+      {/* Context menu (right-click or 3-dot), outside the row so it doesn't fade on mouse leave */}
+      {menuPos && (
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => setMenuPos(null)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setMenuPos(null);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              top: `${Math.min(menuPos.y, window.innerHeight - 110)}px`,
+              left: `${Math.min(menuPos.x, window.innerWidth - 140)}px`,
+            }}
+            className="fixed w-32 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 text-xs"
+          >
+            {fsHandle && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuPos(null);
+                  void getCopyPath(fsHandle, currentDirectory).then((p) => navigator.clipboard.writeText(p));
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy Path</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setMenuPos(null);
+                setIsRenaming(true);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Rename</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Render Subdirectory Children */}
       {isDirectory && isOpen && entry.children && (

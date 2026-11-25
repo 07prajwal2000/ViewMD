@@ -26,6 +26,7 @@ export const App: React.FC = () => {
     saveActiveFile,
     closeTab,
     moveTabToPane,
+    focusedPane,
     setFocusedPane,
     createNewInMemoryFile,
     createNewPresentationDeck,
@@ -85,6 +86,24 @@ export const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Ctrl+W / Cmd+W closes the active tab; with no tab open it falls through and closes the window.
+  // Works in the installed PWA window only: regular browser tabs reserve Ctrl+W.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== 'w') return;
+      // Holding the keys must not run through every tab and then close the window
+      if (e.repeat) return e.preventDefault();
+      const pane: PaneType = isSplitView ? focusedPane : 'primary';
+      const tab = pane === 'primary' ? activePrimaryTab : activeSecondaryTab;
+      if (!tab) return;
+      e.preventDefault();
+      closeTab(tab.id, pane);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSplitView, focusedPane, activePrimaryTab, activeSecondaryTab, closeTab]);
 
   const renderViewer = (tab: TabItem | undefined, pane: PaneType) => {
     if (!tab) {

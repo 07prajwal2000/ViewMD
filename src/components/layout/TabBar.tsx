@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare, Presentation, Save } from 'lucide-react';
+import { X, FileText, File, FileCode, Pin, Columns2, ArrowRight, ArrowLeft, XCircle, XSquare, Presentation, Save, Copy } from 'lucide-react';
 import { useTabs, type PaneType } from '../../context/TabsContext';
+import { useWorkspace } from '../../context/WorkspaceContext';
+import { getCopyPath } from '../../services/fileSystem/fileAccess';
 import type { TabItem } from '../../types/plugin';
 
 interface TabBarProps {
@@ -26,6 +28,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
     toggleSplitView,
     setFocusedPane,
   } = useTabs();
+  const { currentDirectory } = useWorkspace();
 
   const [draggedTab, setDraggedTab] = useState<{ id: string; index: number; pane: PaneType } | null>(null);
   const [contextMenuTab, setContextMenuTab] = useState<{ tab: TabItem; x: number; y: number } | null>(null);
@@ -300,7 +303,7 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
         >
           <div
             style={{
-              top: `${Math.min(contextMenuTab.y, window.innerHeight - 210)}px`,
+              top: `${Math.min(contextMenuTab.y, window.innerHeight - 240)}px`,
               left: `${Math.min(contextMenuTab.x, window.innerWidth - 200)}px`,
             }}
             className="fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-51 text-xs min-w-[190px]"
@@ -334,6 +337,22 @@ export const TabBar: React.FC<TabBarProps> = ({ pane = 'primary' }) => {
               <Pin className="w-3 h-3" />
               <span>{contextMenuTab.tab.isPinned ? 'Unpin Tab' : 'Pin Tab'}</span>
             </button>
+
+            {contextMenuTab.tab.fileHandle && (
+              <button
+                type="button"
+                onClick={() => {
+                  void getCopyPath(contextMenuTab.tab.fileHandle!, currentDirectory).then((p) =>
+                    navigator.clipboard.writeText(p)
+                  );
+                  setContextMenuTab(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 cursor-pointer"
+              >
+                <Copy className="w-3 h-3" />
+                <span>Copy Path</span>
+              </button>
+            )}
 
             {pane === 'primary' ? (
               <button
